@@ -100,13 +100,15 @@ namespace Pathoschild.Stardew.TractorMod.Framework
         /// <param name="e">The event data.</param>
         public void OnAssetRequested(AssetRequestedEventArgs e)
         {
+            this.Monitor.Log($"OnAssetRequested: {e.NameWithoutLocale}", LogLevel.Trace);
             // Allow for garages from older versions that didn't get normalized correctly.
             // This can be removed once support for legacy data is dropped.
             if (e.NameWithoutLocale.IsEquivalentTo("Buildings/TractorGarage") && this.GarageTexture != null)
                 e.LoadFrom(() => this.GarageTexture, AssetLoadPriority.Low);
 
             // load tractor, garage, or buff texture
-            if (e.NameWithoutLocale.IsEquivalentTo($"{this.PublicAssetBasePath}/Tractor") || e.NameWithoutLocale.IsEquivalentTo($"{this.PublicAssetBasePath}/Garage") || e.NameWithoutLocale.IsEquivalentTo($"{this.PublicAssetBasePath}/BuffIcon"))
+            if (e.NameWithoutLocale.IsEquivalentTo($"{this.PublicAssetBasePath}/Tractor") || e.NameWithoutLocale.IsEquivalentTo($"{this.PublicAssetBasePath}/Garage") || e.NameWithoutLocale.IsEquivalentTo($"{this.PublicAssetBasePath}/BuffIcon")
+                || e.NameWithoutLocale.IsEquivalentTo($"{this.PublicAssetBasePath}/QuestSprites"))
             {
                 string key = PathUtilities.GetSegments(e.NameWithoutLocale.Name).Last();
                 e.LoadFrom(

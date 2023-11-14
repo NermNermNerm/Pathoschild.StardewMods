@@ -1,4 +1,5 @@
 ﻿{
+    "$schema": "https://smapi.io/schemas/manifest.json",
     "Name": "Tractor Mod",
     "Author": "Pathoschild",
     "Version": "4.16.5",

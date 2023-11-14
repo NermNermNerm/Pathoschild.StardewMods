@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Microsoft.Xna.Framework;
@@ -16,7 +17,9 @@ using StardewValley;
 using StardewValley.Buildings;
 using StardewValley.Characters;
 using StardewValley.GameData.Buildings;
+using StardewValley.GameData.Objects;
 using StardewValley.Locations;
+using StardewValley.Objects;
 
 namespace Pathoschild.Stardew.TractorMod
 {
@@ -37,6 +40,9 @@ namespace Pathoschild.Stardew.TractorMod
 
         /// <summary>The unique ID for the stable building in <c>Data/Buildings</c>.</summary>
         private readonly string GarageBuildingId = "Pathoschild.TractorMod_Stable";
+
+        /// <summary>The unique ID for the tractor chunk in <c>Data/Objects</c>.</summary>
+        private readonly string TractorChunkObjectId = "Pathoschild.TractorMod_TractorChunk";
 
         /// <summary>The minimum version the host must have for the mod to be enabled on a farmhand.</summary>
         private readonly string MinHostVersion = "4.15.0";
@@ -270,6 +276,32 @@ namespace Pathoschild.Stardew.TractorMod
                         Size = new Point(4, 2),
                         CollisionMap = "XXXX\nXOOX"
                     };
+                });
+            }
+            else if (e.NameWithoutLocale.IsEquivalentTo("Data/Objects"))
+            {
+                e.Edit(editor =>
+                {
+                    IDictionary<string, ObjectData> objects = editor.AsDictionary<string, ObjectData>().Data;
+                    objects[this.TractorChunkObjectId] = new()
+                    {
+                        Name = "TractorMod.TractorChunk",
+                        DisplayName = $"Tractor Chunk",
+                        Description = "A rusted piece of what looks like an old tractor",
+                        Type = "Seeds", // TODO
+                        Category = -74, // ?
+                        Price = 0,
+                        Texture = "Mods/PathosChild.TractorMod/QuestSprites",
+                        SpriteIndex = 3,
+                    };
+                });
+            }
+            else if (e.NameWithoutLocale.IsEquivalentTo("Data/CraftingRecipes"))
+            {
+                e.Edit(editor =>
+                {
+                    IDictionary<string, string> recipes = editor.AsDictionary<string, string>().Data;
+                    recipes["TractorMod.TempTractorRecipe"] = $"388 2/Field/{this.TractorChunkObjectId}/false/default/";
                 });
             }
         }
