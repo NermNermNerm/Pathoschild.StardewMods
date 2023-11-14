@@ -201,12 +201,19 @@ namespace Pathoschild.Stardew.TractorMod
             if (!this.IsEnabled)
                 return;
 
+
             // reload textures
             this.TextureManager.UpdateTextures();
 
             // init garages + tractors
             if (Context.IsMainPlayer)
             {
+                // Make the derelict tractor.
+                var farm = Game1.getFarm();
+                var o = ItemRegistry.Create<StardewValley.Object>("(O)" + this.TractorChunkObjectId);
+                bool success2 = farm.dropObject(o, new Vector2(74 * Game1.tileSize, 14 * Game1.tileSize), viewport: Game1.viewport, initialPlacement: true);
+
+
                 foreach (GameLocation location in this.GetLocations())
                 {
                     foreach (Stable garage in this.GetGaragesIn(location))
