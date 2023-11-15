@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
 using Pathoschild.Stardew.Common;
 using Pathoschild.Stardew.Common.Utilities;
 using Pathoschild.Stardew.TractorMod.Framework;
@@ -16,10 +17,12 @@ using StardewModdingAPI.Utilities;
 using StardewValley;
 using StardewValley.Buildings;
 using StardewValley.Characters;
+using StardewValley.Extensions;
 using StardewValley.GameData.Buildings;
 using StardewValley.GameData.Objects;
 using StardewValley.Locations;
 using StardewValley.Objects;
+using StardewValley.TerrainFeatures;
 
 namespace Pathoschild.Stardew.TractorMod
 {
@@ -77,6 +80,8 @@ namespace Pathoschild.Stardew.TractorMod
         /// <summary>Whether the mod is enabled for the current farmhand.</summary>
         private bool IsEnabled = true;
 
+        private Texture2D? derelictTractorTexture;
+
 
         /*********
         ** Public methods
@@ -85,6 +90,8 @@ namespace Pathoschild.Stardew.TractorMod
         /// <param name="helper">Provides simplified APIs for writing mods.</param>
         public override void Entry(IModHelper helper)
         {
+            this.derelictTractorTexture = helper.ModContent.Load<Texture2D>("assets/QuestSprites.png");
+
             CommonHelper.RemoveObsoleteFiles(this, "TractorMod.pdb"); // removed in 4.16.5
 
             // read config
@@ -210,9 +217,26 @@ namespace Pathoschild.Stardew.TractorMod
             {
                 // Make the derelict tractor.
                 var farm = Game1.getFarm();
-                var o = ItemRegistry.Create<StardewValley.Object>("(O)" + this.TractorChunkObjectId);
-                bool success2 = farm.dropObject(o, new Vector2(74 * Game1.tileSize, 14 * Game1.tileSize), viewport: Game1.viewport, initialPlacement: true);
+                //var o = ItemRegistry.Create<StardewValley.Object>(this.TractorChunkObjectId);
+                //o.CanBeGrabbed = false; // alas, doesn't work
+                //bool success2 = farm.dropObject(o, new Vector2(74 * Game1.tileSize, 14 * Game1.tileSize), viewport: Game1.viewport, initialPlacement: true);
+                //var mapHelper = this.Helper.GameContent.GetPatchHelper(farm).AsMap();
+                //mapHelper.
+                //farm.Map.AddTileSheet(new xTile.Tiles.TileSheet()); // No positioning?
+                int ti = farm.Map.GetTileIndexAt(new xTile.Dimensions.Location(74, 14), "Buildings");
+                //var layer = farm.Map.GetLayer("yow");
+                farm.terrainFeatures.Add(new Vector2(74,14), new DerelictTractorTerrainFeature(this.derelictTractorTexture!, new Vector2(74,14)));
 
+
+                //var allegedRock = farm.getObjectAtTile(61, 22);
+                //var s1 = farm.getObjectAtTile(73, 25);
+                //var s2 = farm.getObjectAtTile(74, 25);
+                //var s3 = farm.getObjectAtTile(73, 26);
+                //var s4 = farm.getObjectAtTile(74, 26);
+                //var b1 = farm.getBuildingAt(new Vector2(71, 14));
+                //var b2 = farm.getBuildingAt(new Vector2(73, 25));
+                //var b3 = farm.getBuildingAt(new Vector2(71 * Game1.tileSize, 14 * Game1.tileSize));
+                //var b4 = farm.getBuildingAt(new Vector2(73 * Game1.tileSize, 25 * Game1.tileSize));
 
                 foreach (GameLocation location in this.GetLocations())
                 {
@@ -295,8 +319,8 @@ namespace Pathoschild.Stardew.TractorMod
                         Name = "TractorMod.TractorChunk",
                         DisplayName = $"Tractor Chunk",
                         Description = "A rusted piece of what looks like an old tractor",
-                        Type = "Seeds", // TODO
-                        Category = -74, // ?
+                        Type = "Litter",
+                        Category = -999,
                         Price = 0,
                         Texture = "Mods/PathosChild.TractorMod/QuestSprites",
                         SpriteIndex = 3,
