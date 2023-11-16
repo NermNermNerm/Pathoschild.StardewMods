@@ -14,7 +14,6 @@ namespace Pathoschild.Stardew.TractorMod.Questable
         WaitingForSebastianDay2,
         TalkToWizard,
         BringStuffToForest,
-        CollectJunimoPart,
         BringEngineToSebastian,
         BringEngineToMaru,
         WaitForEngineInstall,

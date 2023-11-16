@@ -323,6 +323,9 @@ namespace Pathoschild.Stardew.TractorMod
             if (this.derelictPosition != new Vector2())
             {
                 Game1.getFarm().terrainFeatures.Remove(this.derelictPosition!);
+                Game1.getFarm().terrainFeatures.Remove(this.derelictPosition! + new Vector2(0, 1));
+                Game1.getFarm().terrainFeatures.Remove(this.derelictPosition! + new Vector2(1, 1));
+                Game1.getFarm().terrainFeatures.Remove(this.derelictPosition! + new Vector2(1, 0));
                 Game1.player.modData[ModDataKeys.DerelictPosition] = FormattableString.Invariant($"{this.derelictPosition.X},{this.derelictPosition.Y}");
             }
             else
@@ -404,6 +407,14 @@ namespace Pathoschild.Stardew.TractorMod
                 {
                     IDictionary<string, string> recipes = editor.AsDictionary<string, string>().Data;
                     recipes["TractorMod.TempTractorRecipe"] = $"388 2/Field/{this.TractorChunkObjectId}/false/default/";
+                });
+            }
+            else if (e.NameWithoutLocale.IsEquivalentTo("Data/Mail"))
+            {
+                e.Edit(editor =>
+                {
+                    var mailItems = editor.AsDictionary<string, string>().Data;
+                    RestoreTractorQuest.AddMailItems(mailItems);
                 });
             }
         }
