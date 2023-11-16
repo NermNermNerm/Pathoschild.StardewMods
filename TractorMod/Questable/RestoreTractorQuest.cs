@@ -104,6 +104,8 @@ namespace Pathoschild.Stardew.TractorMod.Questable
             Game1.player.questLog.Add(q);
         }
 
+        public string Serialize() => this.state.ToString();
+
         public static void Spout(NPC n, params string[] dialogitems)
         {
             new DialogueBox(dialogitems.ToList());
@@ -133,7 +135,8 @@ namespace Pathoschild.Stardew.TractorMod.Questable
             return base.checkIfComplete(n, number1, number2, item, str, probe);
         }
 
-        public string Serialize() => this.state.ToString();
+        public bool CanBuildGarage => this.state.CanBuildGarage();
+
 
         public static void AddMailItems(IDictionary<string, string> mailItems)
         {

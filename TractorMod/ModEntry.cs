@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Pathoschild.Stardew.Common;
@@ -322,10 +323,7 @@ namespace Pathoschild.Stardew.TractorMod
         {
             if (this.derelictPosition != new Vector2())
             {
-                Game1.getFarm().terrainFeatures.Remove(this.derelictPosition!);
-                Game1.getFarm().terrainFeatures.Remove(this.derelictPosition! + new Vector2(0, 1));
-                Game1.getFarm().terrainFeatures.Remove(this.derelictPosition! + new Vector2(1, 1));
-                Game1.getFarm().terrainFeatures.Remove(this.derelictPosition! + new Vector2(1, 0));
+                Game1.getFarm().terrainFeatures.RemoveWhere(p => p.Value is DerelictTractorTerrainFeature);
                 Game1.player.modData[ModDataKeys.DerelictPosition] = FormattableString.Invariant($"{this.derelictPosition.X},{this.derelictPosition.Y}");
             }
             else
@@ -357,30 +355,67 @@ namespace Pathoschild.Stardew.TractorMod
             {
                 e.Edit(editor =>
                 {
-                    var data = editor.AsDictionary<string, BuildingData>().Data;
+                    List<BuildingMaterial>? buildingMaterials = null;
+                    int buildingCost = 0;
+                    string description = "";
 
-                    data[this.GarageBuildingId] = new BuildingData
+                    if (!this.Config.QuestDriven)
                     {
-                        Name = I18n.Garage_Name(),
-                        Description = I18n.Garage_Description(),
-                        Texture = $"{this.PublicAssetBasePath}/Garage",
-                        BuildingType = typeof(Stable).FullName,
-                        SortTileOffset = 1,
+                        buildingCost = this.Config.BuildPrice;
+                        buildingMaterials = this.Config.BuildMaterials
+                                .Select(p => new BuildingMaterial
+                                {
+                                    ItemId = p.Key,
+                                    Amount = p.Value
+                                })
+                                .ToList();
+                        description = I18n.Garage_Description();
+                    }
+                    else
+                    {
+                        // TODO: It'd be nice if we could do  ' if (this.IsQuestReadyForTractorBuilding())'
+                        //   but it looks like the game builds its list of buildings before a save is even
+                        //   loaded, so we can't use any sort of context here.
 
-                        Builder = Game1.builder_robin,
-                        BuildCost = this.Config.BuildPrice,
-                        BuildMaterials = this.Config.BuildMaterials
-                            .Select(p => new BuildingMaterial
-                            {
-                                ItemId = p.Key,
-                                Amount = p.Value
-                            })
-                            .ToList(),
-                        BuildDays = 2,
+                        // Note that the cost isn't configurable here because:
+                        //  1. The whole idea of the quest is to tune it to other events in the game.
+                        //  2. There are several other quest objectives that have requirements besides
+                        //     the garage and that'd just way overcomplicate things.
+                        buildingCost = 350;
 
-                        Size = new Point(4, 2),
-                        CollisionMap = "XXXX\nXOOX"
-                    };
+                        // Note that the practical length limit of this list is 3 - because of the size of
+                        //   the shop-for-buildings dialog at Robin's shop.  It'd be nice if we could make
+                        //   a bit of a story out of the cup of coffee.
+                        buildingMaterials = new List<BuildingMaterial>
+                        {
+                            new BuildingMaterial() { ItemId = "(O)388", Amount = 3 }, // 3 Wood
+                            new BuildingMaterial() { ItemId = "(O)390", Amount = 5 }, // 5 Stone
+                            new BuildingMaterial() { ItemId = "(O)395", Amount = 1 }, // 1 cup of coffee
+                        };
+                        description = "A garage to store your tractor.";
+                    }
+
+                    if (buildingMaterials is not null)
+                    {
+                        var data = editor.AsDictionary<string, BuildingData>().Data;
+                        data[this.GarageBuildingId] = new BuildingData
+                        {
+                            Name = I18n.Garage_Name(),
+                            Description = I18n.Garage_Description(),
+                            Texture = $"{this.PublicAssetBasePath}/Garage",
+                            BuildingType = typeof(Stable).FullName,
+                            SortTileOffset = 1,
+
+                            Builder = Game1.builder_robin,
+                            BuildCost = buildingCost,
+                            BuildMaterials = buildingMaterials,
+                            BuildDays = 2,
+
+                            Size = new Point(4, 2),
+                            CollisionMap = "XXXX\nXOOX"
+                        };
+                    }
+
                 });
             }
             else if (e.NameWithoutLocale.IsEquivalentTo("Data/Objects"))
@@ -417,6 +452,23 @@ namespace Pathoschild.Stardew.TractorMod
                     RestoreTractorQuest.AddMailItems(mailItems);
                 });
             }
+        }
+
+        private bool IsQuestReadyForTractorBuilding()
+        {
+            if (Game1.player?.IsMainPlayer == true)
+            {
+                // In quest mode, you can only have one garage.
+                if (this.GetGaragesIn(Game1.getFarm()) is not null)
+                {
+                    return false;
+                }
+
+                var quest = Game1.player.questLog.OfType<RestoreTractorQuest>().FirstOrDefault();
+                return (quest is not null && quest.CanBuildGarage);
+            }
+
+            return false;
         }
 
         /// <inheritdoc cref="IContentEvents.LocaleChanged"/>

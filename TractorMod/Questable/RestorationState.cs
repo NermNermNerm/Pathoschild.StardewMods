@@ -28,5 +28,8 @@ namespace Pathoschild.Stardew.TractorMod.Questable
         public static bool IsDerelictInTheGarage(this RestorationState _this)
             => _this > RestorationState.BuildTractorGarage && _this < RestorationState.Complete;
 
+        public static bool CanBuildGarage(this RestorationState _this)
+            => _this >= RestorationState.BuildTractorGarage;
+
     }
 }
