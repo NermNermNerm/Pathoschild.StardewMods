@@ -20,7 +20,7 @@ namespace Pathoschild.Stardew.TractorMod.Questable
         private readonly Vector2 tile;
 
         public DerelictTractorTerrainFeature(Texture2D texture, Vector2 tile)
-            : base(needsTick: true)
+            : base(needsTick: false)
         {
             this.texture = texture;
             this.tile = tile;
@@ -28,23 +28,9 @@ namespace Pathoschild.Stardew.TractorMod.Questable
 
         public override Rectangle getBoundingBox()
         {
-            Vector2 tile = this.Tile;
-            return new Rectangle((int)tile.X * 64, (int)tile.Y * 64, 64*2, 64*2);
+            var r = new Rectangle((int)this.tile.X * 64, (int)this.tile.Y * 64, 64*2, 64*2);
+            return r;
         }
-
-        public override void initNetFields()
-        {
-            NetInt height = new NetInt(), width = new NetInt();
-            height.Value = 2;
-            width.Value = 2;
-            NetVector2 netTile = new NetVector2();
-            netTile.Value = this.Tile;
-            base.initNetFields();
-            base.NetFields.AddField(width, "width")
-                .AddField(height, "height") //.AddField(parentSheetIndex, "parentSheetIndex")
-                .AddField(netTile, "netTile");
-        }
-
 
         public override bool isPassable(Character c)
         {
@@ -53,8 +39,11 @@ namespace Pathoschild.Stardew.TractorMod.Questable
 
         public override bool performToolAction(Tool t, int damage, Vector2 tileLocation)
         {
-            Game1.drawObjectDialogue("This looks like an old tractor.  Perhaps it could help you out around the farm, but it's been out in the weather a long time.  It'll need some fixing.  Maybe somebody in town can help?");
-            RestoreTractorQuest.BeginQuest();
+            if (!Game1.player.questLog.Any(q => q is RestoreTractorQuest))
+            {
+                Game1.drawObjectDialogue("This looks like an old tractor.  Perhaps it could help you out around the farm, but it's been out in the weather a long time.  It'll need some fixing.  Maybe somebody in town can help?");
+                RestoreTractorQuest.BeginQuest();
+            }
 
             return base.performToolAction(t, damage, tileLocation);
         }

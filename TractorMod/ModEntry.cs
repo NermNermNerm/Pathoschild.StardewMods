@@ -300,10 +300,14 @@ namespace Pathoschild.Stardew.TractorMod
                     }
 
                     // TODO: Properly find a position.
-                    position = new Vector2(74, 14);
+                    position = new Vector2(75, 14);
                 }
                 this.derelictPosition = position;
-                Game1.getFarm().terrainFeatures.Add(position, new DerelictTractorTerrainFeature(this.derelictTractorTexture!, position));
+                var tf = new DerelictTractorTerrainFeature(this.derelictTractorTexture!, position);
+                Game1.getFarm().terrainFeatures.Add(position, tf);
+                Game1.getFarm().terrainFeatures.Add(position + new Vector2(0, 1), tf);
+                Game1.getFarm().terrainFeatures.Add(position + new Vector2(1, 1), tf);
+                Game1.getFarm().terrainFeatures.Add(position + new Vector2(1, 0), tf);
             }
 
             RestoreTractorQuest.RestoreQuest(restorationStatus);

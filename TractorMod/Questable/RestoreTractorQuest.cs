@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Linq;
+using Netcode;
 using StardewValley;
 using StardewValley.Menus;
 using StardewValley.Quests;
@@ -75,19 +76,19 @@ namespace Pathoschild.Stardew.TractorMod.Questable
             if (n?.Name == "Lewis" && this.state == RestorationState.TalkToLewis)
             {
                 n.CurrentDialogue.Push(new Dialogue(n, null, "An old tractor you say?#$b#I know your Grandfather had one - I thought he had sold it off before he died.  He never could keep it on the furrows.$h#$b#If you want to get it fixed, I suggest you talk to Robin's son, Sebastian; he's actually quite the gearhead.  Maybe he can help."));
+                Game1.drawDialogue(n);
                 this.SetState(RestorationState.TalkToSebastian);
             }
             else if (n?.Name == "Sebastian" && this.state == RestorationState.TalkToSebastian)
             {
                 n.CurrentDialogue.Push(new Dialogue(n, null, "Let me get this straight - I barely know who you are and I'm supposed to fix your rusty old tractor?$a#$b#Sorry, but I've got a lot of stuff going on and can't really spare the time."));
+                Game1.drawDialogue(n);
                 this.SetState(RestorationState.TalkToLewisAgain);
             }
             else if (n?.Name == "Lewis" && this.state == RestorationState.TalkToLewisAgain)
             {
-                n.CurrentDialogue.Clear();
                 n.CurrentDialogue.Push(new Dialogue(n, null, "He said that?$a#$b#Well, I can't say I'm really surprised...  A bit disappointed, tho.$s#$b#Hm. . .$u#$b#Welp, I guess this is why they pay me the big money, eh?  I'll see if I can make this happen for you, but it might take a couple days."));
-                //n.CurrentDialogue.Clear();
-                //n.CurrentDialogue.Push(new Dialogue(n, null, "He said that?#$b#Well, I can't say I'm really surprised...  A bit disappointed, tho.#$b#Hm. . .#$b#Welp, I guess this is why they pay me the big money, eh?  I'll see if I can make this happen for you, but it might take a couple days."));
+                Game1.drawDialogue(n);
                 this.SetState(RestorationState.WaitingForMailFromRobinDay1);
             }
 
