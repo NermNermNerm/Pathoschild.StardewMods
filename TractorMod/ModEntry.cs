@@ -11,6 +11,7 @@ using Pathoschild.Stardew.TractorMod.Framework;
 using Pathoschild.Stardew.TractorMod.Framework.Attachments;
 using Pathoschild.Stardew.TractorMod.Framework.Config;
 using Pathoschild.Stardew.TractorMod.Framework.ModAttachments;
+using Pathoschild.Stardew.TractorMod.Questable;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewModdingAPI.Utilities;
@@ -114,6 +115,7 @@ namespace Pathoschild.Stardew.TractorMod
             });
             this.UpdateConfig();
 
+
             // hook events
             IModEvents events = helper.Events;
             events.Content.AssetRequested += this.OnAssetRequested;
@@ -200,6 +202,30 @@ namespace Pathoschild.Stardew.TractorMod
             }
         }
 
+        private static class ModDataKeys
+        {
+            public const string QuestStatus = "QuestableTractorMod.QuestStatus";
+            public const string DerelictPosition = "QuestableTractorMod.DerelictPosition";
+        }
+
+        private static bool TryParse(string s, out Vector2 position)
+        {
+            string[] split = s.Split(",");
+            if (split.Length == 2
+                && int.TryParse(split[0], out int x)
+                && int.TryParse(split[1], out int y))
+            {
+                position = new Vector2(x,y);
+                return true;
+            }
+            else
+            {
+                position = new Vector2();
+                return false;
+            }
+
+        }
+
         /// <inheritdoc cref="IGameLoopEvents.DayStarted"/>
         /// <param name="sender">The event sender.</param>
         /// <param name="e">The event data.</param>
@@ -208,35 +234,13 @@ namespace Pathoschild.Stardew.TractorMod
             if (!this.IsEnabled)
                 return;
 
-
             // reload textures
             this.TextureManager.UpdateTextures();
 
             // init garages + tractors
             if (Context.IsMainPlayer)
             {
-                // Make the derelict tractor.
-                var farm = Game1.getFarm();
-                //var o = ItemRegistry.Create<StardewValley.Object>(this.TractorChunkObjectId);
-                //o.CanBeGrabbed = false; // alas, doesn't work
-                //bool success2 = farm.dropObject(o, new Vector2(74 * Game1.tileSize, 14 * Game1.tileSize), viewport: Game1.viewport, initialPlacement: true);
-                //var mapHelper = this.Helper.GameContent.GetPatchHelper(farm).AsMap();
-                //mapHelper.
-                //farm.Map.AddTileSheet(new xTile.Tiles.TileSheet()); // No positioning?
-                int ti = farm.Map.GetTileIndexAt(new xTile.Dimensions.Location(74, 14), "Buildings");
-                //var layer = farm.Map.GetLayer("yow");
-                farm.terrainFeatures.Add(new Vector2(74,14), new DerelictTractorTerrainFeature(this.derelictTractorTexture!, new Vector2(74,14)));
-
-
-                //var allegedRock = farm.getObjectAtTile(61, 22);
-                //var s1 = farm.getObjectAtTile(73, 25);
-                //var s2 = farm.getObjectAtTile(74, 25);
-                //var s3 = farm.getObjectAtTile(73, 26);
-                //var s4 = farm.getObjectAtTile(74, 26);
-                //var b1 = farm.getBuildingAt(new Vector2(71, 14));
-                //var b2 = farm.getBuildingAt(new Vector2(73, 25));
-                //var b3 = farm.getBuildingAt(new Vector2(71 * Game1.tileSize, 14 * Game1.tileSize));
-                //var b4 = farm.getBuildingAt(new Vector2(73 * Game1.tileSize, 25 * Game1.tileSize));
+                this.InitializeQuestable();
 
                 foreach (GameLocation location in this.GetLocations())
                 {
@@ -268,6 +272,69 @@ namespace Pathoschild.Stardew.TractorMod
                         this.TextureManager.ApplyTextures(tractor, this.IsTractor);
                     }
                 }
+            }
+        }
+
+        private Vector2 derelictPosition;
+
+        private void InitializeQuestable()
+        {
+            if (!Game1.player.modData.TryGetValue(ModDataKeys.QuestStatus, out string? statusAsString)
+                || !Enum.TryParse(statusAsString, true, out RestorationState restorationStatus))
+            {
+                if (statusAsString is not null)
+                {
+                    this.Monitor.Log($"Invalid value for {ModDataKeys.QuestStatus}: {statusAsString} -- reverting to NotStarted", LogLevel.Error);
+                }
+                restorationStatus = RestorationState.NotStarted;
+            }
+
+            if (restorationStatus.IsDerelictInTheFields())
+            {
+                Game1.player.modData.TryGetValue(ModDataKeys.DerelictPosition, out string? positionAsString);
+                if (positionAsString is null || !TryParse(positionAsString, out Vector2 position))
+                {
+                    if (positionAsString is not null)
+                    {
+                        this.Monitor.Log($"Invalid value for {ModDataKeys.QuestStatus}: {statusAsString} -- finding a new position", LogLevel.Error);
+                    }
+
+                    // TODO: Properly find a position.
+                    position = new Vector2(74, 14);
+                }
+                this.derelictPosition = position;
+                Game1.getFarm().terrainFeatures.Add(position, new DerelictTractorTerrainFeature(this.derelictTractorTexture!, position));
+            }
+
+            RestoreTractorQuest.RestoreQuest(restorationStatus);
+        }
+
+        /// <summary>
+        ///   Custom classes, like we're doing with the tractor and the quest, don't serialize without some help.
+        ///   This method provides that help by converting the objects to player moddata and deleting the objects
+        ///   prior to save.  <see cref="InitializeQuestable"/> restores them.
+        /// </summary>
+        private void CleanUpQuestable()
+        {
+            if (this.derelictPosition != new Vector2())
+            {
+                Game1.getFarm().terrainFeatures.Remove(this.derelictPosition!);
+                Game1.player.modData[ModDataKeys.DerelictPosition] = FormattableString.Invariant($"{this.derelictPosition.X},{this.derelictPosition.Y}");
+            }
+            else
+            {
+                Game1.player.modData.Remove(ModDataKeys.DerelictPosition);
+            }
+
+            string? questState = Game1.player.questLog.OfType<RestoreTractorQuest>().FirstOrDefault()?.Serialize();
+            if (questState is null)
+            {
+                Game1.player.modData.Remove(ModDataKeys.QuestStatus);
+            }
+            else
+            {
+                Game1.player.modData[ModDataKeys.QuestStatus] = questState;
+                Game1.player.questLog.RemoveWhere(q => q is RestoreTractorQuest);
             }
         }
 
@@ -470,6 +537,8 @@ namespace Pathoschild.Stardew.TractorMod
                             Game1.warpCharacter(tractor, "Farm", new Point(0, 0));
                     }
                 }
+
+                this.CleanUpQuestable();
             }
         }
 
