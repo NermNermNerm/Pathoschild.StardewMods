@@ -301,23 +301,6 @@ namespace Pathoschild.Stardew.TractorMod
             }
         }
 
-        private bool IsQuestReadyForTractorBuilding()
-        {
-            if (Game1.player?.IsMainPlayer == true)
-            {
-                // In quest mode, you can only have one garage.
-                if (this.GetGaragesIn(Game1.getFarm()) is not null)
-                {
-                    return false;
-                }
-
-                var quest = Game1.player.questLog.OfType<RestoreTractorQuest>().FirstOrDefault();
-                return (quest is not null && quest.CanBuildGarage);
-            }
-
-            return false;
-        }
-
         /// <inheritdoc cref="IContentEvents.LocaleChanged"/>
         /// <param name="sender">The event sender.</param>
         /// <param name="e">The event data.</param>
