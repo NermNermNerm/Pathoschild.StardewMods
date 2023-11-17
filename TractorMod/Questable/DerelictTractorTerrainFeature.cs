@@ -1,14 +1,7 @@
-using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using Netcode;
 using StardewValley;
-using StardewValley.Menus;
-using StardewValley.Network;
 using StardewValley.TerrainFeatures;
 
 namespace Pathoschild.Stardew.TractorMod.Questable
@@ -42,7 +35,7 @@ namespace Pathoschild.Stardew.TractorMod.Questable
             if (!Game1.player.questLog.Any(q => q is RestoreTractorQuest))
             {
                 Game1.drawObjectDialogue("This looks like an old tractor.  Perhaps it could help you out around the farm, but it's been out in the weather a long time.  It'll need some fixing.  Maybe somebody in town can help?");
-                RestoreTractorQuest.BeginQuest();
+                QuestSetup.BeginQuest();
             }
 
             return base.performToolAction(t, damage, tileLocation);

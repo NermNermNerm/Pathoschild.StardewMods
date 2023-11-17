@@ -46,9 +46,6 @@ namespace Pathoschild.Stardew.TractorMod
         /// <summary>The unique ID for the stable building in <c>Data/Buildings</c>.</summary>
         private readonly string GarageBuildingId = "Pathoschild.TractorMod_Stable";
 
-        /// <summary>The unique ID for the tractor chunk in <c>Data/Objects</c>.</summary>
-        private readonly string TractorChunkObjectId = "Pathoschild.TractorMod_TractorChunk";
-
         /// <summary>The minimum version the host must have for the mod to be enabled on a farmhand.</summary>
         private readonly string MinHostVersion = "4.15.0";
 
@@ -82,8 +79,6 @@ namespace Pathoschild.Stardew.TractorMod
         /// <summary>Whether the mod is enabled for the current farmhand.</summary>
         private bool IsEnabled = true;
 
-        private Texture2D? derelictTractorTexture;
-
 
         /*********
         ** Public methods
@@ -92,8 +87,6 @@ namespace Pathoschild.Stardew.TractorMod
         /// <param name="helper">Provides simplified APIs for writing mods.</param>
         public override void Entry(IModHelper helper)
         {
-            this.derelictTractorTexture = helper.ModContent.Load<Texture2D>("assets/QuestSprites.png");
-
             CommonHelper.RemoveObsoleteFiles(this, "TractorMod.pdb"); // removed in 4.16.5
 
             // read config
@@ -203,30 +196,6 @@ namespace Pathoschild.Stardew.TractorMod
             }
         }
 
-        private static class ModDataKeys
-        {
-            public const string QuestStatus = "QuestableTractorMod.QuestStatus";
-            public const string DerelictPosition = "QuestableTractorMod.DerelictPosition";
-        }
-
-        private static bool TryParse(string s, out Vector2 position)
-        {
-            string[] split = s.Split(",");
-            if (split.Length == 2
-                && int.TryParse(split[0], out int x)
-                && int.TryParse(split[1], out int y))
-            {
-                position = new Vector2(x,y);
-                return true;
-            }
-            else
-            {
-                position = new Vector2();
-                return false;
-            }
-
-        }
-
         /// <inheritdoc cref="IGameLoopEvents.DayStarted"/>
         /// <param name="sender">The event sender.</param>
         /// <param name="e">The event data.</param>
@@ -238,26 +207,36 @@ namespace Pathoschild.Stardew.TractorMod
             // reload textures
             this.TextureManager.UpdateTextures();
 
+            QuestSetup.OnDayStarted(this.GetGaragesIn(Game1.getFarm()).FirstOrDefault(), this.Monitor, this.Helper);
+
             // init garages + tractors
             if (Context.IsMainPlayer)
             {
-                this.InitializeQuestable();
-
                 foreach (GameLocation location in this.GetLocations())
                 {
                     foreach (Stable garage in this.GetGaragesIn(location))
                     {
+
                         // spawn new tractor if needed
                         Horse? tractor = this.FindHorse(garage.HorseId);
                         if (!garage.isUnderConstruction())
                         {
                             Vector2 tractorTile = this.GetDefaultTractorTile(garage);
-                            if (tractor == null)
+                            if (tractor == null && (!this.Config.QuestDriven || QuestSetup.IsTractorUnlocked))
                             {
                                 tractor = new Horse(garage.HorseId, (int)tractorTile.X, (int)tractorTile.Y);
                                 location.addCharacter(tractor);
                             }
-                            tractor.DefaultPosition = tractorTile;
+                            else if (tractor is not null && this.Config.QuestDriven && !QuestSetup.IsTractorUnlocked)
+                            {
+                                location.characters.Remove(tractor);
+                                tractor = null;
+                            }
+
+                            if (tractor is not null)
+                            {
+                                tractor.DefaultPosition = tractorTile;
+                            }
                         }
 
                         // normalize tractor
@@ -276,72 +255,7 @@ namespace Pathoschild.Stardew.TractorMod
             }
         }
 
-        private Vector2 derelictPosition;
 
-        private void InitializeQuestable()
-        {
-            if (!Game1.player.modData.TryGetValue(ModDataKeys.QuestStatus, out string? statusAsString)
-                || !Enum.TryParse(statusAsString, true, out RestorationState restorationStatus))
-            {
-                if (statusAsString is not null)
-                {
-                    this.Monitor.Log($"Invalid value for {ModDataKeys.QuestStatus}: {statusAsString} -- reverting to NotStarted", LogLevel.Error);
-                }
-                restorationStatus = RestorationState.NotStarted;
-            }
-
-            if (restorationStatus.IsDerelictInTheFields())
-            {
-                Game1.player.modData.TryGetValue(ModDataKeys.DerelictPosition, out string? positionAsString);
-                if (positionAsString is null || !TryParse(positionAsString, out Vector2 position))
-                {
-                    if (positionAsString is not null)
-                    {
-                        this.Monitor.Log($"Invalid value for {ModDataKeys.QuestStatus}: {statusAsString} -- finding a new position", LogLevel.Error);
-                    }
-
-                    // TODO: Properly find a position.
-                    position = new Vector2(75, 14);
-                }
-                this.derelictPosition = position;
-                var tf = new DerelictTractorTerrainFeature(this.derelictTractorTexture!, position);
-                Game1.getFarm().terrainFeatures.Add(position, tf);
-                Game1.getFarm().terrainFeatures.Add(position + new Vector2(0, 1), tf);
-                Game1.getFarm().terrainFeatures.Add(position + new Vector2(1, 1), tf);
-                Game1.getFarm().terrainFeatures.Add(position + new Vector2(1, 0), tf);
-            }
-
-            RestoreTractorQuest.RestoreQuest(restorationStatus);
-        }
-
-        /// <summary>
-        ///   Custom classes, like we're doing with the tractor and the quest, don't serialize without some help.
-        ///   This method provides that help by converting the objects to player moddata and deleting the objects
-        ///   prior to save.  <see cref="InitializeQuestable"/> restores them.
-        /// </summary>
-        private void CleanUpQuestable()
-        {
-            if (this.derelictPosition != new Vector2())
-            {
-                Game1.getFarm().terrainFeatures.RemoveWhere(p => p.Value is DerelictTractorTerrainFeature);
-                Game1.player.modData[ModDataKeys.DerelictPosition] = FormattableString.Invariant($"{this.derelictPosition.X},{this.derelictPosition.Y}");
-            }
-            else
-            {
-                Game1.player.modData.Remove(ModDataKeys.DerelictPosition);
-            }
-
-            string? questState = Game1.player.questLog.OfType<RestoreTractorQuest>().FirstOrDefault()?.Serialize();
-            if (questState is null)
-            {
-                Game1.player.modData.Remove(ModDataKeys.QuestStatus);
-            }
-            else
-            {
-                Game1.player.modData[ModDataKeys.QuestStatus] = questState;
-                Game1.player.questLog.RemoveWhere(q => q is RestoreTractorQuest);
-            }
-        }
 
         /// <inheritdoc cref="IContentEvents.AssetRequested"/>
         /// <param name="sender">The event sender.</param>
@@ -350,52 +264,13 @@ namespace Pathoschild.Stardew.TractorMod
         {
             this.AudioManager.OnAssetRequested(e);
             this.TextureManager.OnAssetRequested(e);
+            QuestSetup.OnAssetRequested(e, this.Config);
 
             if (e.NameWithoutLocale.IsEquivalentTo("Data/Buildings"))
             {
                 e.Edit(editor =>
                 {
-                    List<BuildingMaterial>? buildingMaterials = null;
-                    int buildingCost = 0;
-                    string description = "";
-
                     if (!this.Config.QuestDriven)
-                    {
-                        buildingCost = this.Config.BuildPrice;
-                        buildingMaterials = this.Config.BuildMaterials
-                                .Select(p => new BuildingMaterial
-                                {
-                                    ItemId = p.Key,
-                                    Amount = p.Value
-                                })
-                                .ToList();
-                        description = I18n.Garage_Description();
-                    }
-                    else
-                    {
-                        // TODO: It'd be nice if we could do  ' if (this.IsQuestReadyForTractorBuilding())'
-                        //   but it looks like the game builds its list of buildings before a save is even
-                        //   loaded, so we can't use any sort of context here.
-
-                        // Note that the cost isn't configurable here because:
-                        //  1. The whole idea of the quest is to tune it to other events in the game.
-                        //  2. There are several other quest objectives that have requirements besides
-                        //     the garage and that'd just way overcomplicate things.
-                        buildingCost = 350;
-
-                        // Note that the practical length limit of this list is 3 - because of the size of
-                        //   the shop-for-buildings dialog at Robin's shop.  It'd be nice if we could make
-                        //   a bit of a story out of the cup of coffee.
-                        buildingMaterials = new List<BuildingMaterial>
-                        {
-                            new BuildingMaterial() { ItemId = "(O)388", Amount = 3 }, // 3 Wood
-                            new BuildingMaterial() { ItemId = "(O)390", Amount = 5 }, // 5 Stone
-                            new BuildingMaterial() { ItemId = "(O)395", Amount = 1 }, // 1 cup of coffee
-                        };
-                        description = "A garage to store your tractor.";
-                    }
-
-                    if (buildingMaterials is not null)
                     {
                         var data = editor.AsDictionary<string, BuildingData>().Data;
                         data[this.GarageBuildingId] = new BuildingData
@@ -407,8 +282,14 @@ namespace Pathoschild.Stardew.TractorMod
                             SortTileOffset = 1,
 
                             Builder = Game1.builder_robin,
-                            BuildCost = buildingCost,
-                            BuildMaterials = buildingMaterials,
+                            BuildCost = this.Config.BuildPrice,
+                            BuildMaterials = this.Config.BuildMaterials
+                                .Select(p => new BuildingMaterial
+                                {
+                                    ItemId = p.Key,
+                                    Amount = p.Value
+                                })
+                                .ToList(),
                             BuildDays = 2,
 
                             Size = new Point(4, 2),
@@ -416,40 +297,6 @@ namespace Pathoschild.Stardew.TractorMod
                         };
                     }
 
-                });
-            }
-            else if (e.NameWithoutLocale.IsEquivalentTo("Data/Objects"))
-            {
-                e.Edit(editor =>
-                {
-                    IDictionary<string, ObjectData> objects = editor.AsDictionary<string, ObjectData>().Data;
-                    objects[this.TractorChunkObjectId] = new()
-                    {
-                        Name = "TractorMod.TractorChunk",
-                        DisplayName = $"Tractor Chunk",
-                        Description = "A rusted piece of what looks like an old tractor",
-                        Type = "Litter",
-                        Category = -999,
-                        Price = 0,
-                        Texture = "Mods/PathosChild.TractorMod/QuestSprites",
-                        SpriteIndex = 3,
-                    };
-                });
-            }
-            else if (e.NameWithoutLocale.IsEquivalentTo("Data/CraftingRecipes"))
-            {
-                e.Edit(editor =>
-                {
-                    IDictionary<string, string> recipes = editor.AsDictionary<string, string>().Data;
-                    recipes["TractorMod.TempTractorRecipe"] = $"388 2/Field/{this.TractorChunkObjectId}/false/default/";
-                });
-            }
-            else if (e.NameWithoutLocale.IsEquivalentTo("Data/Mail"))
-            {
-                e.Edit(editor =>
-                {
-                    var mailItems = editor.AsDictionary<string, string>().Data;
-                    RestoreTractorQuest.AddMailItems(mailItems);
                 });
             }
         }
@@ -573,6 +420,8 @@ namespace Pathoschild.Stardew.TractorMod
             if (!this.IsEnabled)
                 return;
 
+            QuestSetup.OnDayEnding();
+
             if (Context.IsMainPlayer)
             {
                 // collect valid stable IDs
@@ -605,7 +454,6 @@ namespace Pathoschild.Stardew.TractorMod
                     }
                 }
 
-                this.CleanUpQuestable();
             }
         }
 

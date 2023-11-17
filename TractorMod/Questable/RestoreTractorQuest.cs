@@ -5,8 +5,10 @@ using System.Linq;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Netcode;
 using StardewValley;
+using StardewValley.Buildings;
 using StardewValley.Menus;
 using StardewValley.Quests;
+using static Pathoschild.Stardew.TractorMod.Questable.QuestSetup;
 
 namespace Pathoschild.Stardew.TractorMod.Questable
 {
@@ -15,9 +17,7 @@ namespace Pathoschild.Stardew.TractorMod.Questable
     {
         private RestorationState state = RestorationState.NotStarted;
 
-        private static class MailKeys {
-            public const string BuildTheGarage = "QuestableTractorMod.BuildTheGarage";
-        };
+        private bool hasDoneStatusCheckToday = false;
 
         public RestoreTractorQuest(RestorationState state)
         {
@@ -53,94 +53,148 @@ namespace Pathoschild.Stardew.TractorMod.Questable
                     this.currentObjective = "Get Robin to build you a garage to get the tractor out of the weather.";
                     break;
 
+                case RestorationState.WaitingForSebastianDay1:
+                case RestorationState.WaitingForSebastianDay2:
+                    this.currentObjective = "Sebastian promised to get on the job right after the barn got built.  Hopefully he's actually on the case.";
+                    break;
+
+                case RestorationState.TalkToWizard:
+                    this.currentObjective = "Ask for help with the strange tractor motor.";
+                    break;
+
+                case RestorationState.BringStuffToForest:
+                    this.currentObjective = "Put the motor, the bat wing, 20 sap, 20 mixed seeds and an Aquamarine in a chest in the secret woods.";
+                    break;
+
+                case RestorationState.BringEngineToSebastian:
+                    this.currentObjective = "Hopefully the Junimo magic worked!  Get the engine out of the secret woods and bring it to Sebastian.";
+                    break;
+
+                case RestorationState.BringEngineToMaru:
+                    this.currentObjective = "Bring the engine to Maru to install.";
+                    break;
+
+                case RestorationState.WaitForEngineInstall:
+                    this.currentObjective = "Maru says that after the engine is installed, it should actually run!  Just have to wait a little bit longer...";
+                    break;
+
                 default:
-                    this.currentObjective = "TODO";
+                    this.currentObjective = "TODO"; // Unreachable, barring a code bug.
                     break;
             }
         }
 
-        public static void BeginQuest()
+        public static RestorationState AdvanceProgress(Stable? garage, RestorationState restorationStatus)
         {
-            var q = new RestoreTractorQuest(RestorationState.TalkToLewis);
-            Game1.player.questLog.Add(q);
-        }
 
-        public static void RestoreQuest(RestorationState state)
-        {
-            if (state == RestorationState.Complete || state == RestorationState.NotStarted)
-            {
-                return;
-            }
-
-            var newStateForToday = state;
-            switch (state)
+            // Advance progress
+            switch (restorationStatus)
             {
                 case RestorationState.WaitingForMailFromRobinDay1:
-                    newStateForToday = RestorationState.WaitingForMailFromRobinDay2;
+                    restorationStatus = RestorationState.WaitingForMailFromRobinDay2;
                     break;
                 case RestorationState.WaitingForMailFromRobinDay2:
-                    newStateForToday = RestorationState.BuildTractorGarage;
-                    Game1.addMail(MailKeys.BuildTheGarage);
+                    restorationStatus = RestorationState.BuildTractorGarage;
+                    Game1.addMail(QuestSetup.MailKeys.BuildTheGarage);
                     break;
                 case RestorationState.BuildTractorGarage:
-                    // TODO: If garage is built:
-                    // newStateForToday = RestorationState.WaitingForSebastianDay1;
+                    if (garage is not null && !garage.isUnderConstruction())
+                    {
+                        restorationStatus = RestorationState.WaitingForSebastianDay1;
+                    }
                     break;
                 case RestorationState.WaitingForSebastianDay1:
-                    newStateForToday = RestorationState.WaitingForSebastianDay2;
+                    restorationStatus = RestorationState.WaitingForSebastianDay2;
                     break;
                 case RestorationState.WaitingForSebastianDay2:
-                    // TODO: send mail with engine
+                    Game1.addMail(QuestSetup.MailKeys.FixTheEngine);
+                    restorationStatus = RestorationState.TalkToWizard;
                     break;
-
                 case RestorationState.BringStuffToForest:
                     // TODO: Check if the player left the goodies in the forest and if so:
                     // newStateForToday = RestorationState.BringEngineToSebastian;
                     break;
             }
 
-            var q = new RestoreTractorQuest(newStateForToday);
-            q.MarkAsViewed();
-            Game1.player.questLog.Add(q);
+            return restorationStatus;
         }
+
 
         public string Serialize() => this.state.ToString();
 
-        public static void Spout(NPC n, params string[] dialogitems)
+        public static void Spout(NPC n, string message)
         {
-            new DialogueBox(dialogitems.ToList());
+            n.CurrentDialogue.Push(new Dialogue(n, null, message));
+            Game1.drawDialogue(n);
         }
 
         public override bool checkIfComplete(NPC? n, int number1, int number2, Item? item, string str, bool probe)
         {
             if (n?.Name == "Lewis" && this.state == RestorationState.TalkToLewis)
             {
-                n.CurrentDialogue.Push(new Dialogue(n, null, "An old tractor you say?#$b#I know your Grandfather had one - I thought he had sold it off before he died.  He never could keep it on the furrows.$h#$b#If you want to get it fixed, I suggest you talk to Robin's son, Sebastian; he's actually quite the gearhead.  Maybe he can help."));
-                Game1.drawDialogue(n);
+                Spout(n, "An old tractor you say?#$b#I know your Grandfather had one - I thought he had sold it off before he died.  He never could keep it on the furrows.$h#$b#If you want to get it fixed, I suggest you talk to Robin's son, Sebastian; he's actually quite the gearhead.  Maybe he can help.");
                 this.SetState(RestorationState.TalkToSebastian);
             }
             else if (n?.Name == "Sebastian" && this.state == RestorationState.TalkToSebastian)
             {
-                n.CurrentDialogue.Push(new Dialogue(n, null, "Let me get this straight - I barely know who you are and I'm supposed to fix your rusty old tractor?$a#$b#Sorry, but I've got a lot of stuff going on and can't really spare the time."));
+                Spout(n, "Let me get this straight - I barely know who you are and I'm supposed to fix your rusty old tractor?$a#$b#Sorry, but I've got a lot of stuff going on and can't really spare the time.");
                 Game1.drawDialogue(n);
                 this.SetState(RestorationState.TalkToLewisAgain);
             }
             else if (n?.Name == "Lewis" && this.state == RestorationState.TalkToLewisAgain)
             {
-                n.CurrentDialogue.Push(new Dialogue(n, null, "He said that?$a#$b#Well, I can't say I'm really surprised...  A bit disappointed, tho.$s#$b#Hm. . .$u#$b#Welp, I guess this is why they pay me the big money, eh?  I'll see if I can make this happen for you, but it might take a couple days."));
+                Spout(n, "He said that?$a#$b#Well, I can't say I'm really surprised...  A bit disappointed, tho.$s#$b#Hm. . .$u#$b#Welp, I guess this is why they pay me the big money, eh?  I'll see if I can make this happen for you, but it might take a couple days.");
                 Game1.drawDialogue(n);
                 this.SetState(RestorationState.WaitingForMailFromRobinDay1);
+            }
+            // Maybe make an "if there's coffee involved it goes faster?" option?
+            else if (n?.Name == "Sebastian" && this.state == RestorationState.WaitingForSebastianDay1 && !this.hasDoneStatusCheckToday)
+            {
+                Spout(n, "Trust me, I'm working on it, but I also have my day-gig to worry about.  I work odd hours, so you might not be around when I'm working on it.  Oh and thanks for the coffee.");
+                Game1.drawDialogue(n);
+                this.hasDoneStatusCheckToday = true;
+            }
+            else if (n?.Name == "Sebastian" && this.state == RestorationState.WaitingForSebastianDay2 && !this.hasDoneStatusCheckToday)
+            {
+                Spout(n, "I made a lot of progress last night.  Most of it is cleaning up okay, but the engine itself is, well, it seems a little out of the ordinary. . .");
+                Game1.drawDialogue(n);
+                this.hasDoneStatusCheckToday = true;
+            }
+            else if (n?.Name == "Wizard" && this.state == RestorationState.TalkToWizard && item?.ItemId == QuestSetup.ObjectIds.BustedEngine)
+            {
+                Spout(n, "Oh...  Now where did you get that??!$l#$b#Ooooh... Ah.  Yes.  I see...  Mmm...$s#$b#Yes.  Your grandfather dabbled a bit in Forest Magic.  He was nowhere near as adept a practitioner as myself, to be sure...#$b#When the mundane engine broke down and he couldn't afford to fix it, he enlisted some forest magic to make a new one.#$b#As you can see, the Junimos that he recruited to keep the motor running have gotten bored and wandered away.  You'll need to coax them back.$s#$b#Now, pay attention!  This will require your utmost concentration!$a#$b#You must place the engine, 20 sap, 20 mixed seeds, and an aquamarine in a chest in the secret woods in front of the statue...#$b#Then, you must run around the chest, six times, clockwise very, very quickly.  Overnight, your engine will be restored.#$b#Now GO!  I have concerns much greater than yours right now.$a");
+                this.SetState(RestorationState.BringStuffToForest);
+            }
+            else if (n?.Name == "Sebastian" && item?.ItemId == QuestSetup.ObjectIds.BustedEngine)
+            {
+                Spout(n, "That is the craziest engine I've ever seen.  Have  you shown it to Clint?  I mean, he knows something about metalworking.  Maybe it's some kinda wierd alloy?^ ^Or...^Maybe aliens.");
+                this.hasDoneStatusCheckToday = true;
+            }
+            else if (n?.Name == "Clint" && item?.ItemId == QuestSetup.ObjectIds.BustedEngine)
+            {
+                Spout(n, "Uh...#$b#What is it?  you say it's an Engine?$s#$b#I say it's wierd. . .  Hey, is that thing moving?$a#$b#I don't know.  Maybe the Wizard would know what it is, and even if he doesn't, he'll sure pretend like he does if you show it to him.$");
+                this.hasDoneStatusCheckToday = true;
+            }
+            else if ((n?.Name == "Abigail" || n?.Name == "Vincent") && item?.ItemId == QuestSetup.ObjectIds.BustedEngine)
+            {
+                Spout(n, "Oh wow...#$b#Can I have it?");
+                this.hasDoneStatusCheckToday = true;
+            }
+            else if (n?.Name == "Marnie" && item?.ItemId == QuestSetup.ObjectIds.BustedEngine)
+            {
+                Spout(n, "AAAAHHH!!!  IT'S MOVING!  TAKE IT AWAY!$a");
+                // TODO: Remember that Marnie saw it and have gossip later about it.
+                this.hasDoneStatusCheckToday = true;
+            }
+            else if (n is not null && item?.ItemId == QuestSetup.ObjectIds.BustedEngine)
+            {
+                Spout(n, "I've never seen anything like that before...#$b#It gives me this uncanny feeling like...  it's missing something.#$b#Wierd.");
+                this.hasDoneStatusCheckToday = true;
             }
 
             return base.checkIfComplete(n, number1, number2, item, str, probe);
         }
 
         public bool CanBuildGarage => this.state.CanBuildGarage();
-
-
-        public static void AddMailItems(IDictionary<string, string> mailItems)
-        {
-            mailItems[MailKeys.BuildTheGarage] = "Hey there!^I talked with Sebastian about your tractor and he has agreed to work on it, but only if he's got a decent place to work.  I understand that you're just starting out here and don't have a lot of money laying around, so I'm willing to do it at-cost, providing you can come up with the materials.  Come by my shop for a full list of materials.  See you soon!^  - Robin";
-        }
     }
 }
