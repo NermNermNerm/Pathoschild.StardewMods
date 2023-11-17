@@ -7,6 +7,7 @@ using Netcode;
 using StardewValley;
 using StardewValley.Buildings;
 using StardewValley.Menus;
+using StardewValley.Objects;
 using StardewValley.Quests;
 using static Pathoschild.Stardew.TractorMod.Questable.QuestSetup;
 
@@ -111,12 +112,84 @@ namespace Pathoschild.Stardew.TractorMod.Questable
                     restorationStatus = RestorationState.TalkToWizard;
                     break;
                 case RestorationState.BringStuffToForest:
-                    // TODO: Check if the player left the goodies in the forest and if so:
-                    // newStateForToday = RestorationState.BringEngineToSebastian;
+                    if (CheckForest())
+                    {
+                        restorationStatus = RestorationState.BringEngineToSebastian;
+                    }
+                    break;
+                case RestorationState.WaitForEngineInstall:
+                    restorationStatus = RestorationState.Complete;
                     break;
             }
 
             return restorationStatus;
+        }
+
+        public static bool CheckForest()
+        {
+            var forest = Game1.getLocationFromName("Woods");
+            bool hasSap = false, hasEngine = false, hasSeeds = false, hasGem = false;
+            foreach (var chest in forest.objects.Values.OfType<Chest>())
+            {
+                foreach (var item in chest.Items)
+                {
+                    if (item.ItemId == "92" && item.Stack >= 20)
+                    {
+                        hasSap = true;
+                    }
+                    if (item.ItemId == QuestSetup.ObjectIds.BustedEngine)
+                    {
+                        hasEngine = true;
+                    }
+                    if (item.ItemId == "770" && item.Stack >= 20)
+                    {
+                        hasSeeds = true;
+                    }
+                    if (item.ItemId == "62")
+                    {
+                        hasGem = true;
+                    }
+                }
+            }
+
+            if (!hasSap || !hasEngine || !hasSeeds || !hasGem)
+            {
+                return false;
+            }
+
+            foreach (var chest in forest.objects.Values.OfType<Chest>())
+            {
+                List<Item> toRemove = new List<Item>();
+                List<Item> toAdd = new List<Item>();
+                foreach (var item in chest.Items)
+                {
+                    if (item.ItemId == "92" && item.Stack >= 20)
+                    {
+                        toRemove.Add(item); // Keeping it simple: If you give the Junimo's more than 20, that's like tipping them.
+                    }
+                    if (item.ItemId == QuestSetup.ObjectIds.BustedEngine)
+                    {
+                        toRemove.Add(item);
+                        toAdd.Add(new StardewValley.Object(QuestSetup.ObjectIds.WorkingEngine, 1));
+                    }
+                    if (item.ItemId == "770" && item.Stack >= 20)
+                    {
+                        toRemove.Add(item);
+                    }
+                    if (item.ItemId == "62")
+                    {
+                        toRemove.Add(item);
+                    }
+                }
+
+                foreach (var deadItem in toRemove)
+                {
+                    chest.Items.Remove(deadItem);
+                }
+                chest.Items.AddRange(toAdd);
+            }
+
+            return true;
         }
 
 
@@ -168,33 +241,37 @@ namespace Pathoschild.Stardew.TractorMod.Questable
             else if (n?.Name == "Sebastian" && item?.ItemId == QuestSetup.ObjectIds.BustedEngine)
             {
                 Spout(n, "That is the craziest engine I've ever seen.  Have  you shown it to Clint?  I mean, he knows something about metalworking.  Maybe it's some kinda wierd alloy?^ ^Or...^Maybe aliens.");
-                this.hasDoneStatusCheckToday = true;
             }
             else if (n?.Name == "Clint" && item?.ItemId == QuestSetup.ObjectIds.BustedEngine)
             {
                 Spout(n, "Uh...#$b#What is it?  you say it's an Engine?$s#$b#I say it's wierd. . .  Hey, is that thing moving?$a#$b#I don't know.  Maybe the Wizard would know what it is, and even if he doesn't, he'll sure pretend like he does if you show it to him.$");
-                this.hasDoneStatusCheckToday = true;
             }
             else if ((n?.Name == "Abigail" || n?.Name == "Vincent") && item?.ItemId == QuestSetup.ObjectIds.BustedEngine)
             {
                 Spout(n, "Oh wow...#$b#Can I have it?");
-                this.hasDoneStatusCheckToday = true;
             }
             else if (n?.Name == "Marnie" && item?.ItemId == QuestSetup.ObjectIds.BustedEngine)
             {
                 Spout(n, "AAAAHHH!!!  IT'S MOVING!  TAKE IT AWAY!$a");
                 // TODO: Remember that Marnie saw it and have gossip later about it.
-                this.hasDoneStatusCheckToday = true;
             }
             else if (n is not null && item?.ItemId == QuestSetup.ObjectIds.BustedEngine)
             {
                 Spout(n, "I've never seen anything like that before...#$b#It gives me this uncanny feeling like...  it's missing something.#$b#Wierd.");
-                this.hasDoneStatusCheckToday = true;
+            }
+            else if (n?.Name == "Sebastian" && item?.ItemId == QuestSetup.ObjectIds.WorkingEngine)
+            {
+                Spout(n, "Whoah....$s#$b#I mean, if you say it's fixed, I can believe it.  Definitely has a look of workiness about it!$l#$b#But seriously...  I shouldn't be installing this thing.  It's, yaknow, out of my area but...$s#$b#I hate to say it, my Sister would be able to figure it out, no matter how wierd it is.");
+                this.SetState(RestorationState.BringEngineToMaru);
+            }
+            else if (n?.Name == "Maru" && item?.ItemId == QuestSetup.ObjectIds.WorkingEngine)
+            {
+                Spout(n, "Wow!  I mean I have no idea what it does, but I'm sure it'll look cool doing it!$h#$b#You want me to install it in the tractor?  Sure, I'll do it.  I helped Seb haul it out of the mud.  He really did a great job polishing it up.#$b#Just give me a day or so, k?  And be sure to drive it up here sometime, I want to ride it around!$l");
+                this.SetState(RestorationState.WaitForEngineInstall);
+                Game1.player.removeItemFromInventory(item);
             }
 
             return base.checkIfComplete(n, number1, number2, item, str, probe);
         }
-
-        public bool CanBuildGarage => this.state.CanBuildGarage();
     }
 }

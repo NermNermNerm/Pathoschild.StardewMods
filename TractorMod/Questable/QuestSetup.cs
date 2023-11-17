@@ -53,16 +53,16 @@ namespace Pathoschild.Stardew.TractorMod.Questable
             }
 
             if (!Game1.player.modData.TryGetValue(ModDataKeys.MainQuestStatus, out string? statusAsString)
-                || !Enum.TryParse(statusAsString, true, out RestorationState mainQuestStatus))
+                || !Enum.TryParse(statusAsString, true, out RestorationState mainQuestStatusAtDayStart))
             {
                 if (statusAsString is not null)
                 {
                     monitor.Log($"Invalid value for {ModDataKeys.MainQuestStatus}: {statusAsString} -- reverting to NotStarted", LogLevel.Error);
                 }
-                mainQuestStatus = RestorationState.NotStarted;
+                mainQuestStatusAtDayStart = RestorationState.NotStarted;
             }
 
-            mainQuestStatus = RestoreTractorQuest.AdvanceProgress(garage, mainQuestStatus);
+            var mainQuestStatus = RestoreTractorQuest.AdvanceProgress(garage, mainQuestStatusAtDayStart);
 
             if (mainQuestStatus.IsDerelictInTheFields() || mainQuestStatus.IsDerelictInTheGarage())
             {
@@ -103,6 +103,13 @@ namespace Pathoschild.Stardew.TractorMod.Questable
                 q.MarkAsViewed();
                 Game1.player.questLog.Add(q);
             }
+            else if (mainQuestStatus == RestorationState.Complete && mainQuestStatusAtDayStart != RestorationState.Complete)
+            {
+                var q = new RestoreTractorQuest(mainQuestStatus);
+                Game1.player.questLog.Add(q);
+                q.questComplete();
+                Game1.player.modData[ModDataKeys.MainQuestStatus] = RestorationState.Complete.ToString();
+            }
         }
 
         /// <summary>
@@ -115,15 +122,12 @@ namespace Pathoschild.Stardew.TractorMod.Questable
             Game1.getFarm().terrainFeatures.RemoveWhere(p => p.Value is DerelictTractorTerrainFeature);
 
             string? questState = Game1.player.questLog.OfType<RestoreTractorQuest>().FirstOrDefault()?.Serialize();
-            if (questState is null)
-            {
-                Game1.player.modData.Remove(ModDataKeys.MainQuestStatus);
-            }
-            else
+            if (questState is not null)
             {
                 Game1.player.modData[ModDataKeys.MainQuestStatus] = questState;
-                Game1.player.questLog.RemoveWhere(q => q is RestoreTractorQuest);
             }
+
+            Game1.player.questLog.RemoveWhere(q => q is RestoreTractorQuest);
         }
 
         public static bool IsTractorUnlocked
