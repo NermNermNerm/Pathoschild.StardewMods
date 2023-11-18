@@ -20,6 +20,10 @@ namespace Pathoschild.Stardew.TractorMod.Questable
 
         private bool hasDoneStatusCheckToday = false;
 
+        public RestoreTractorQuest()
+            : this(RestorationState.TalkToLewis)
+        { }
+
         public RestoreTractorQuest(RestorationState state)
         {
             this.questTitle = "Investigate the tractor";

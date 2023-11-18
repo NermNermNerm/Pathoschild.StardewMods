@@ -4,20 +4,33 @@ using System.Linq;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Pathoschild.Stardew.TractorMod.Framework;
+using Pathoschild.Stardew.TractorMod.Framework.Config;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewValley;
 using StardewValley.Buildings;
 using StardewValley.GameData.Buildings;
 using StardewValley.GameData.Objects;
+using StardewValley.Tools;
 
 namespace Pathoschild.Stardew.TractorMod.Questable
 {
-    public static class QuestSetup
+    public class QuestSetup
     {
         // Mirrored from ModEntry  IMO, this is how it should be declared there.  Doing it this way for least-intrusion.
         public const string GarageBuildingId = "Pathoschild.TractorMod_Stable";
         public const string PublicAssetBasePath = "Mods/Pathoschild.TractorMod";
+
+        private ModConfig Config { get; }
+        private IModHelper Helper { get; }
+        private IMonitor Monitor { get; }
+
+        internal QuestSetup(IMonitor monitor, ModConfig config, IModHelper helper)
+        {
+            this.Config = config;
+            this.Helper = helper;
+            this.Monitor = monitor;
+        }
 
         public static class ObjectIds
         {
@@ -35,17 +48,14 @@ namespace Pathoschild.Stardew.TractorMod.Questable
         {
             public const string MainQuestStatus = "QuestableTractorMod.MainQuestStatus";
             public const string DerelictPosition = "QuestableTractorMod.DerelictPosition";
+            public const string AxeAndPickQuestStatus = "QuestableTractorMod.AxeAndPickQuestStatus";
+            public const string ScytheQuestStatus = "QuestableTractorMod.ScytheQuestStatus";
+            public const string WateringQuestStatus = "QuestableTractorMod.WateringQuestStatus";
+            public const string SpreadingQuestStatus = "QuestableTractorMod.SpreadingQuestStatus";
         }
 
 
-        public static void BeginQuest()
-        {
-            var q = new RestoreTractorQuest(RestorationState.TalkToLewis);
-            Game1.player.questLog.Add(q);
-        }
-
-
-        public static void OnDayStarted(Stable? garage, IMonitor monitor, IModHelper helper)
+        public void OnDayStarted(Stable? garage)
         {
             if (!Context.IsMainPlayer)
             {
@@ -57,7 +67,7 @@ namespace Pathoschild.Stardew.TractorMod.Questable
             {
                 if (statusAsString is not null)
                 {
-                    monitor.Log($"Invalid value for {ModDataKeys.MainQuestStatus}: {statusAsString} -- reverting to NotStarted", LogLevel.Error);
+                    this.Monitor.Log($"Invalid value for {ModDataKeys.MainQuestStatus}: {statusAsString} -- reverting to NotStarted", LogLevel.Error);
                 }
                 mainQuestStatusAtDayStart = RestorationState.NotStarted;
             }
@@ -74,7 +84,7 @@ namespace Pathoschild.Stardew.TractorMod.Questable
                     {
                         if (positionAsString is not null)
                         {
-                            monitor.Log($"Invalid value for {ModDataKeys.MainQuestStatus}: {statusAsString} -- finding a new position", LogLevel.Error);
+                            this.Monitor.Log($"Invalid value for {ModDataKeys.MainQuestStatus}: {statusAsString} -- finding a new position", LogLevel.Error);
                         }
 
                         // TODO: Properly find a position.
@@ -88,7 +98,7 @@ namespace Pathoschild.Stardew.TractorMod.Questable
                     position = new Vector2(garage.tileX.Value + 1, garage.tileY.Value);
                 }
 
-                var derelictTractorTexture = helper.ModContent.Load<Texture2D>("assets/rustyTractor.png");
+                var derelictTractorTexture = this.Helper.ModContent.Load<Texture2D>("assets/rustyTractor.png");
 
                 var tf = new DerelictTractorTerrainFeature(derelictTractorTexture, position);
                 Game1.getFarm().terrainFeatures.Add(position, tf);
@@ -117,7 +127,7 @@ namespace Pathoschild.Stardew.TractorMod.Questable
         ///   This method provides that help by converting the objects to player moddata and deleting the objects
         ///   prior to save.  <see cref="InitializeQuestable"/> restores them.
         /// </summary>
-        public static void OnDayEnding()
+        public void OnDayEnding()
         {
             Game1.getFarm().terrainFeatures.RemoveWhere(p => p.Value is DerelictTractorTerrainFeature);
 
@@ -130,12 +140,65 @@ namespace Pathoschild.Stardew.TractorMod.Questable
             Game1.player.questLog.RemoveWhere(q => q is RestoreTractorQuest);
         }
 
-        public static bool IsTractorUnlocked
+        public static T? GetModConfig<T>(string key)
+            where T: struct // <-- see how Enum.TryParse<T> is declared for evidence that's the best you can do.
         {
-            get => Game1.player.modData[ModDataKeys.MainQuestStatus] == RestorationState.Complete.ToString();
+            return (Game1.player.modData.TryGetValue(key, out string value) && Enum.TryParse(value, out T result)) ? result : null;
         }
 
-        internal static void OnAssetRequested(AssetRequestedEventArgs e, ModConfig config)
+        public bool IsTractorUnlocked
+        {
+            get => GetModConfig<RestorationState>(ModDataKeys.MainQuestStatus) == RestorationState.Complete;
+        }
+
+        internal AxeConfig GetAxeConfig(AxeConfig configured)
+        {
+            return GetModConfig<AxeAndPickQuestState>(ModDataKeys.AxeAndPickQuestStatus) == AxeAndPickQuestState.Complete
+                ? configured : Disabled<AxeConfig>();
+        }
+
+        internal PickAxeConfig GetPickConfig(PickAxeConfig configured)
+        {
+            return GetModConfig<AxeAndPickQuestState>(ModDataKeys.AxeAndPickQuestStatus) == AxeAndPickQuestState.Complete
+                ? configured : Disabled<PickAxeConfig>();
+        }
+
+        internal GenericAttachmentConfig GetSpreaderConfig(GenericAttachmentConfig _)
+        {
+            return Disabled<GenericAttachmentConfig>();
+        }
+
+        internal ScytheConfig GetScytheConfig(ScytheConfig configured)
+        {
+            return Disabled<ScytheConfig>();
+        }
+
+        internal GenericAttachmentConfig GetScytheConfig(GenericAttachmentConfig configured)
+        {
+            return Disabled<GenericAttachmentConfig>();
+        }
+
+        internal GenericAttachmentConfig GetWateringCanConfig(GenericAttachmentConfig configured)
+        {
+            return Disabled<GenericAttachmentConfig>();
+        }
+
+        internal HoeConfig GetHoeConfig(HoeConfig configured)
+        {
+            // By default, the Hoe has amazing powers.  This variant of the mod tones it down.
+            HoeConfig limitedConfig = Disabled<HoeConfig>();
+            limitedConfig.TillDirt = true;
+            limitedConfig.ClearWeeds = configured.ClearWeeds; // <- if you run a real plow over a weed, it's a bad day for the weed... unless maybe it's a dandilion, then it only makes it stronger.
+            return limitedConfig;
+        }
+
+        internal T GetUnsupportedConfig<T>(T configured)
+            where T : new()
+        {
+            return Disabled<T>();
+        }
+
+        internal void OnAssetRequested(AssetRequestedEventArgs e, ModConfig config)
         {
             if (!config.QuestDriven)
             {
@@ -200,7 +263,7 @@ namespace Pathoschild.Stardew.TractorMod.Questable
                     {
                         Name = ObjectIds.BustedEngine,
                         DisplayName = "A funky looking engine that doesn't work", // TODO: 18n
-                        Description = "Sebastian pulled this off of the rusty tractor.  We need to find someone to fix it.", // TODO: 18n
+                        Description = "Sebastian pulled this off of the rusty tractor.  I need to find someone to fix it.", // TODO: 18n
                         Type = "Litter",
                         Category = -999,
                         Price = 0,
@@ -212,7 +275,7 @@ namespace Pathoschild.Stardew.TractorMod.Questable
                     {
                         Name = ObjectIds.WorkingEngine,
                         DisplayName = "A working Junimo-powered engine", // TODO: 18n
-                        Description = "The engine for the tractor!  We need to find someone to install it.", // TODO: 18n
+                        Description = "The engine for the tractor!  I need to find someone to install it.", // TODO: 18n
                         Type = "Litter",
                         Category = -999,
                         Price = 0,
@@ -261,5 +324,18 @@ namespace Pathoschild.Stardew.TractorMod.Questable
             }
         }
 
+        public static T Disabled<T>() where T : new()
+        {
+            var x = new T();
+            foreach (var prop in typeof(T).GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance))
+            {
+                if (prop.CanWrite && prop.PropertyType == typeof(bool))
+                {
+                    prop.SetValue(x, false, null);
+                }
+            }
+
+            return x;
+        }
     }
 }
