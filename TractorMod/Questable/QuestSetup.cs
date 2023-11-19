@@ -11,6 +11,7 @@ using StardewValley;
 using StardewValley.Buildings;
 using StardewValley.GameData.Buildings;
 using StardewValley.GameData.Objects;
+using StardewValley.Network;
 using StardewValley.Tools;
 
 namespace Pathoschild.Stardew.TractorMod.Questable
@@ -21,21 +22,60 @@ namespace Pathoschild.Stardew.TractorMod.Questable
         public const string GarageBuildingId = "Pathoschild.TractorMod_Stable";
         public const string PublicAssetBasePath = "Mods/Pathoschild.TractorMod";
 
-        private ModConfig Config { get; }
-        private IModHelper Helper { get; }
-        private IMonitor Monitor { get; }
+        private ModEntry mod;
 
-        internal QuestSetup(IMonitor monitor, ModConfig config, IModHelper helper)
+        private IModHelper Helper => this.mod.Helper;
+        private IMonitor Monitor => this.mod.Monitor;
+
+        internal QuestSetup(ModEntry mod)
         {
-            this.Config = config;
-            this.Helper = helper;
-            this.Monitor = monitor;
+            this.mod = mod;
+
+            this.Helper.Events.Player.InventoryChanged += this.Player_InventoryChanged;
+            this.Helper.Events.GameLoop.OneSecondUpdateTicked += this.GameLoop_OneSecondUpdateTicked;
+        }
+
+        private void GameLoop_OneSecondUpdateTicked(object? sender, OneSecondUpdateTickedEventArgs e)
+        {
+            // Hacky way to detect when the player when a quest is open
+            if (Game1.player.currentLocation is not null && Game1.player.currentLocation == Game1.getFarm() && Game1.player.CurrentItem?.Name == ObjectIds.WorkingLoader)
+            {
+                if (Game1.player.currentLocation.buildings
+                    .OfType<Stable>()
+                    .Where(s => s.buildingType.Value == GarageBuildingId)
+                    .Any(s => IsInGarage(Game1.player, s)))
+                {
+                    var quest = Game1.player.questLog.OfType<RestoreAxeAndPickAttachmentQuest>().FirstOrDefault();
+                    quest?.WorkingAttachmentBroughtToGarage();
+                    this.mod.UpdateConfig();
+                }
+            }
+        }
+
+        private static bool IsInGarage(Character c, Stable b)
+        {
+            Rectangle cPos = new Rectangle(new Point((int)c.Position.X, (int)c.Position.Y-128), new Point(64, 128));
+            bool isIntersecting = b.intersects(cPos);
+            return isIntersecting;
+        }
+
+        private void Player_InventoryChanged(object? sender, InventoryChangedEventArgs e)
+        {
+            var bustedLoader = e.Added.FirstOrDefault(i => i.ItemId == ObjectIds.BustedLoader);
+            if (bustedLoader is not null)
+            {
+                e.Player.holdUpItemThenMessage(bustedLoader);
+                var quest = new RestoreAxeAndPickAttachmentQuest();
+                e.Player.questLog.Add(quest);
+            }
         }
 
         public static class ObjectIds
         {
             public const string BustedEngine = "Pathoschild.TractorMod_BustedEngine";
             public const string WorkingEngine = "Pathoschild.TractorMod_WorkingEngine";
+            public const string BustedLoader = "Pathoschild.TractorMod_BustedLoader";
+            public const string WorkingLoader = "Pathoschild.TractorMod_WorkingLoader";
         }
 
         public static class MailKeys
@@ -62,64 +102,8 @@ namespace Pathoschild.Stardew.TractorMod.Questable
                 return;
             }
 
-            if (!Game1.player.modData.TryGetValue(ModDataKeys.MainQuestStatus, out string? statusAsString)
-                || !Enum.TryParse(statusAsString, true, out RestorationState mainQuestStatusAtDayStart))
-            {
-                if (statusAsString is not null)
-                {
-                    this.Monitor.Log($"Invalid value for {ModDataKeys.MainQuestStatus}: {statusAsString} -- reverting to NotStarted", LogLevel.Error);
-                }
-                mainQuestStatusAtDayStart = RestorationState.NotStarted;
-            }
-
-            var mainQuestStatus = RestoreTractorQuest.AdvanceProgress(garage, mainQuestStatusAtDayStart);
-
-            if (mainQuestStatus.IsDerelictInTheFields() || mainQuestStatus.IsDerelictInTheGarage())
-            {
-                Vector2 position;
-                if (mainQuestStatus.IsDerelictInTheFields() || garage is null || garage.isUnderConstruction())
-                {
-                    Game1.player.modData.TryGetValue(ModDataKeys.DerelictPosition, out string? positionAsString);
-                    if (positionAsString is null || !TryParse(positionAsString, out position))
-                    {
-                        if (positionAsString is not null)
-                        {
-                            this.Monitor.Log($"Invalid value for {ModDataKeys.MainQuestStatus}: {statusAsString} -- finding a new position", LogLevel.Error);
-                        }
-
-                        // TODO: Properly find a position.
-                        position = new Vector2(75, 14);
-
-                        Game1.player.modData[ModDataKeys.DerelictPosition] = FormattableString.Invariant($"{position.X},{position.Y}");
-                    }
-                }
-                else
-                {
-                    position = new Vector2(garage.tileX.Value + 1, garage.tileY.Value);
-                }
-
-                var derelictTractorTexture = this.Helper.ModContent.Load<Texture2D>("assets/rustyTractor.png");
-
-                var tf = new DerelictTractorTerrainFeature(derelictTractorTexture, position);
-                Game1.getFarm().terrainFeatures.Add(position, tf);
-                Game1.getFarm().terrainFeatures.Add(position + new Vector2(0, 1), tf);
-                Game1.getFarm().terrainFeatures.Add(position + new Vector2(1, 1), tf);
-                Game1.getFarm().terrainFeatures.Add(position + new Vector2(1, 0), tf);
-            }
-
-            if (mainQuestStatus != RestorationState.Complete && mainQuestStatus != RestorationState.NotStarted)
-            {
-                var q = new RestoreTractorQuest(mainQuestStatus);
-                q.MarkAsViewed();
-                Game1.player.questLog.Add(q);
-            }
-            else if (mainQuestStatus == RestorationState.Complete && mainQuestStatusAtDayStart != RestorationState.Complete)
-            {
-                var q = new RestoreTractorQuest(mainQuestStatus);
-                Game1.player.questLog.Add(q);
-                q.questComplete();
-                Game1.player.modData[ModDataKeys.MainQuestStatus] = RestorationState.Complete.ToString();
-            }
+            RestoreTractorQuest.OnDayStart(this.Helper, this.Monitor, garage);
+            RestoreAxeAndPickAttachmentQuest.OnDayStart(this.Helper, this.Monitor);
         }
 
         /// <summary>
@@ -133,11 +117,19 @@ namespace Pathoschild.Stardew.TractorMod.Questable
 
             string? questState = Game1.player.questLog.OfType<RestoreTractorQuest>().FirstOrDefault()?.Serialize();
             if (questState is not null)
+
             {
                 Game1.player.modData[ModDataKeys.MainQuestStatus] = questState;
             }
-
             Game1.player.questLog.RemoveWhere(q => q is RestoreTractorQuest);
+
+            questState = Game1.player.questLog.OfType<RestoreAxeAndPickAttachmentQuest>().FirstOrDefault()?.Serialize();
+            if (questState is not null)
+
+            {
+                Game1.player.modData[ModDataKeys.AxeAndPickQuestStatus] = questState;
+            }
+            Game1.player.questLog.RemoveWhere(q => q is RestoreAxeAndPickAttachmentQuest);
         }
 
         public static T? GetModConfig<T>(string key)
@@ -283,6 +275,30 @@ namespace Pathoschild.Stardew.TractorMod.Questable
                         SpriteIndex = 1,
                         ContextTags = new() { "not_giftable", "not_placeable", "prevent_loss_on_death" },
                     };
+                    objects[ObjectIds.BustedLoader] = new()
+                    {
+                        Name = ObjectIds.BustedLoader,
+                        DisplayName = "A bent up and rusty front-end loader for the tractor", // TODO: 18n
+                        Description = "This was the front-end loader attachment (for picking up rocks and sticks), but it's all bent up and rusted through in spots.  It needs to be fixed to be usable.", // TODO: 18n
+                        Type = "Litter",
+                        Category = -999,
+                        Price = 0,
+                        Texture = "Mods/PathosChild.TractorMod/QuestSprites",
+                        SpriteIndex = 2,
+                        ContextTags = new() { "not_giftable", "not_placeable", "prevent_loss_on_death" },
+                    };
+                    objects[ObjectIds.WorkingLoader] = new()
+                    {
+                        Name = ObjectIds.WorkingLoader,
+                        DisplayName = "A front-end loader attachment for my tractor", // TODO: 18n
+                        Description = "This will allow me to clear rocks and sticks on my farm.  It needs to go into the tractor garage so I can use it.", // TODO: 18n
+                        Type = "Litter",
+                        Category = -999,
+                        Price = 0,
+                        Texture = "Mods/PathosChild.TractorMod/QuestSprites",
+                        SpriteIndex = 3,
+                        ContextTags = new() { "not_giftable", "not_placeable", "prevent_loss_on_death" },
+                    };
                 });
             }
             //else if (e.NameWithoutLocale.IsEquivalentTo("Data/CraftingRecipes"))
@@ -306,23 +322,6 @@ namespace Pathoschild.Stardew.TractorMod.Questable
             }
         }
 
-
-        private static bool TryParse(string s, out Vector2 position)
-        {
-            string[] split = s.Split(",");
-            if (split.Length == 2
-                && int.TryParse(split[0], out int x)
-                && int.TryParse(split[1], out int y))
-            {
-                position = new Vector2(x, y);
-                return true;
-            }
-            else
-            {
-                position = new Vector2();
-                return false;
-            }
-        }
 
         public static T Disabled<T>() where T : new()
         {

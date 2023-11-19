@@ -3,7 +3,10 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
 using Netcode;
+using StardewModdingAPI;
 using StardewValley;
 using StardewValley.Buildings;
 using StardewValley.Menus;
@@ -196,6 +199,52 @@ namespace Pathoschild.Stardew.TractorMod.Questable
             return true;
         }
 
+
+        public static void OnDayStart(IModHelper helper, IMonitor monitor, Stable? garage)
+        {
+            if (!Game1.player.modData.TryGetValue(ModDataKeys.MainQuestStatus, out string? statusAsString)
+                || !Enum.TryParse(statusAsString, true, out RestorationState mainQuestStatusAtDayStart))
+            {
+                if (statusAsString is not null)
+                {
+                    monitor.Log($"Invalid value for {ModDataKeys.MainQuestStatus}: {statusAsString} -- reverting to NotStarted", LogLevel.Error);
+                }
+                mainQuestStatusAtDayStart = RestorationState.NotStarted;
+            }
+
+            var mainQuestStatus = RestoreTractorQuest.AdvanceProgress(garage, mainQuestStatusAtDayStart);
+
+            if (mainQuestStatus.IsDerelictInTheFields())
+            {
+                DerelictTractorTerrainFeature.PlaceInField(helper, monitor);
+            }
+            else if (mainQuestStatus.IsDerelictInTheGarage())
+            {
+                if (garage is null || garage.isUnderConstruction())
+                {
+                    // Could happen I suppose if the user deleted the garage while on the quest.  They can fix it themselves by rebuilding the garage...
+                    monitor.Log($"Tractor main quest state is {mainQuestStatus} but there's no garage??", LogLevel.Error);
+                }
+                else
+                {
+                    DerelictTractorTerrainFeature.PlaceInGarage(helper, monitor, garage);
+                }
+            }
+
+            if (mainQuestStatus != RestorationState.Complete && mainQuestStatus != RestorationState.NotStarted)
+            {
+                var q = new RestoreTractorQuest(mainQuestStatus);
+                q.MarkAsViewed();
+                Game1.player.questLog.Add(q);
+            }
+            else if (mainQuestStatus == RestorationState.Complete && mainQuestStatusAtDayStart != RestorationState.Complete)
+            {
+                var q = new RestoreTractorQuest(mainQuestStatus);
+                Game1.player.questLog.Add(q);
+                q.questComplete();
+                Game1.player.modData[ModDataKeys.MainQuestStatus] = RestorationState.Complete.ToString();
+            }
+        }
 
         public string Serialize() => this.state.ToString();
 

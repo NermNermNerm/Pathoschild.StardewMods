@@ -111,7 +111,7 @@ namespace Pathoschild.Stardew.TractorMod
             });
             this.UpdateConfig();
 
-            this.QuestSetup = new QuestSetup(this.Monitor, this.Config, helper);
+            this.QuestSetup = new QuestSetup(this);
 
             // hook events
             IModEvents events = helper.Events;
@@ -503,7 +503,7 @@ namespace Pathoschild.Stardew.TractorMod
         ** Helper methods
         ****/
         /// <summary>Reapply the mod configuration.</summary>
-        private void UpdateConfig()
+        internal void UpdateConfig()
         {
             this.Helper.GameContent.InvalidateCache("Data/Buildings");
 

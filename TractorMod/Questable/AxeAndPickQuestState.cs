@@ -5,8 +5,7 @@ namespace Pathoschild.Stardew.TractorMod.Questable
     {
         NotStarted,
         TalkToClint,
-        WaitForMailDay1,
-        WaitForMailDay2,
+        InstallTheLoader,
         Complete,
     }
 }
