@@ -1,15 +1,9 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
-using Netcode;
 using StardewModdingAPI;
 using StardewValley;
 using StardewValley.Buildings;
-using StardewValley.Menus;
 using StardewValley.Objects;
 using StardewValley.Quests;
 using static Pathoschild.Stardew.TractorMod.Questable.QuestSetup;
@@ -25,7 +19,9 @@ namespace Pathoschild.Stardew.TractorMod.Questable
 
         public RestoreTractorQuest()
             : this(RestorationState.TalkToLewis)
-        { }
+        {
+            this.showNew.Value = true;
+        }
 
         public RestoreTractorQuest(RestorationState state)
         {

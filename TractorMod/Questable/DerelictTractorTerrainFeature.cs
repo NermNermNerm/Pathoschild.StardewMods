@@ -93,7 +93,7 @@ namespace Pathoschild.Stardew.TractorMod.Questable
             if (!Game1.player.questLog.Any(q => q is RestoreTractorQuest))
             {
                 Game1.drawObjectDialogue("This looks like an old tractor.  Perhaps it could help you out around the farm, but it's been out in the weather a long time.  It'll need some fixing.  Maybe somebody in town can help?");
-                var q = new RestoreTractorQuest(RestorationState.TalkToLewis);
+                var q = new RestoreTractorQuest();
                 Game1.player.questLog.Add(q);
             }
 
