@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using HarmonyLib;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Pathoschild.Stardew.TractorMod.Framework;
@@ -33,6 +35,24 @@ namespace Pathoschild.Stardew.TractorMod.Questable
 
             this.Helper.Events.Player.InventoryChanged += this.Player_InventoryChanged;
             this.Helper.Events.GameLoop.OneSecondUpdateTicked += this.GameLoop_OneSecondUpdateTicked;
+
+            var harmony = new Harmony(mod.ModManifest.UniqueID);
+            var farmType = typeof(Farm);
+            var getFishMethod = farmType.GetMethod("getFish");
+            harmony.Patch(getFishMethod, prefix: new HarmonyMethod(typeof(QuestSetup), nameof(Prefix_GetFish)));
+        }
+
+        private static bool Prefix_GetFish(ref Item __result)
+        {
+            if (Game1.random.NextDouble() < WatererQuest.chanceOfCatchingQuestItem)
+            {
+                __result = ItemRegistry.Create(QuestSetup.ObjectIds.BustedWaterer);
+                return false;
+            }
+            else
+            {
+                return true;
+            }
         }
 
         private void GameLoop_OneSecondUpdateTicked(object? sender, OneSecondUpdateTickedEventArgs e)
@@ -47,7 +67,7 @@ namespace Pathoschild.Stardew.TractorMod.Questable
                 if (Game1.player.currentLocation.buildings
                     .OfType<Stable>()
                     .Where(s => s.buildingType.Value == GarageBuildingId)
-                    .Any(s => IsInGarage(Game1.player, s)))
+                    .Any(s => IsPlayerInGarage(Game1.player, s)))
                 {
                     switch (Game1.player.CurrentItem?.Name)
                     {
@@ -59,13 +79,17 @@ namespace Pathoschild.Stardew.TractorMod.Questable
                             var scytheQuest = Game1.player.questLog.OfType<ScytheQuest>().FirstOrDefault();
                             scytheQuest?.WorkingAttachmentBroughtToGarage();
                             break;
+                        case ObjectIds.WorkingWaterer:
+                            var watererQuest = Game1.player.questLog.OfType<WatererQuest>().FirstOrDefault();
+                            watererQuest?.WorkingAttachmentBroughtToGarage();
+                            break;
                     }
                     this.mod.UpdateConfig();
                 }
             }
         }
 
-        private static bool IsInGarage(Character c, Stable b)
+        private static bool IsPlayerInGarage(Character c, Stable b)
         {
             Rectangle cPos = new Rectangle(new Point((int)c.Position.X, (int)c.Position.Y-128), new Point(64, 128));
             bool isIntersecting = b.intersects(cPos);
@@ -98,6 +122,23 @@ namespace Pathoschild.Stardew.TractorMod.Questable
                 e.Player.holdUpItemThenMessage(fixedScythe, showMessage: false);
                 Game1.DrawDialogue(new Dialogue(null, null, "A little wire brush, some oil, and of course the rest of the parts and job done!  Just need to take it to the garage now!"));
             }
+
+            var bustedWaterer = e.Added.FirstOrDefault(i => i.ItemId == ObjectIds.BustedWaterer);
+            if (bustedWaterer is not null)
+            {
+                var quest = new WatererQuest();
+                e.Player.questLog.Add(quest);
+                Game1.DrawDialogue(new Dialogue(null, null, "Whoah that was heavy!  Looks like an irrigator attachment for a tractor!  I bet there's a story behind how it got here..."));
+                WatererQuest.chanceOfCatchingQuestItem = 0;
+            }
+
+            var fixedWaterer = e.Added.FirstOrDefault(i => i.ItemId == ObjectIds.WorkingWaterer);
+            if (fixedWaterer is not null)
+            {
+                var q = e.Player.questLog.OfType<WatererQuest>().FirstOrDefault();
+                q?.ReadyToInstall();
+                Game1.DrawDialogue(new Dialogue(null, null, "Maru came through!  Time to take it to the garage and water some crops!"));
+            }
         }
 
         public static class ObjectIds
@@ -122,6 +163,7 @@ namespace Pathoschild.Stardew.TractorMod.Questable
         {
             public const string BuildTheGarage = "QuestableTractorMod.BuildTheGarage";
             public const string FixTheEngine = "QuestableTractorMod.FixTheEngine";
+            public const string FixTheWaterer = "QuestableTractorMod.FixTheEngine";
         };
 
         public static class ModDataKeys
@@ -145,6 +187,7 @@ namespace Pathoschild.Stardew.TractorMod.Questable
             RestoreTractorQuest.OnDayStart(this.Helper, this.Monitor, garage);
             AxeAndPickQuest.OnDayStart(this.Helper, this.Monitor);
             ScytheQuest.OnDayStart(this.Helper, this.Monitor);
+            WatererQuest.OnDayStart(this.Helper, this.Monitor, this.IsTractorUnlocked);
         }
 
         /// <summary>
@@ -176,6 +219,13 @@ namespace Pathoschild.Stardew.TractorMod.Questable
                 Game1.player.modData[ModDataKeys.ScytheQuestStatus] = questState;
             }
             Game1.player.questLog.RemoveWhere(q => q is ScytheQuest);
+
+            questState = Game1.player.questLog.OfType<WatererQuest>().FirstOrDefault()?.Serialize();
+            if (questState is not null)
+            {
+                Game1.player.modData[ModDataKeys.WateringQuestStatus] = questState;
+            }
+            Game1.player.questLog.RemoveWhere(q => q is WatererQuest);
         }
 
         public static T? GetModConfig<T>(string key)
@@ -220,7 +270,8 @@ namespace Pathoschild.Stardew.TractorMod.Questable
 
         internal GenericAttachmentConfig GetWateringCanConfig(GenericAttachmentConfig configured)
         {
-            return Disabled<GenericAttachmentConfig>();
+            return GetModConfig<WatererQuestState>(ModDataKeys.WateringQuestStatus) == WatererQuestState.Complete
+                ? configured : Disabled<GenericAttachmentConfig>();
         }
 
         internal HoeConfig GetHoeConfig(HoeConfig configured)
@@ -391,7 +442,7 @@ namespace Pathoschild.Stardew.TractorMod.Questable
                 e.Edit(editor =>
                 {
                     IDictionary<string, string> recipes = editor.AsDictionary<string, string>().Data;
-                    recipes["TractorMod.TempTractorRecipe"] = $"{ObjectIds.BustedScythe} 1 {ObjectIds.ScythePart1} 1 {ObjectIds.ScythePart2} 1/Field/{ObjectIds.WorkingScythe}/false/default/";
+                    recipes["TractorMod.ScytheAttachment"] = $"{ObjectIds.BustedScythe} 1 {ObjectIds.ScythePart1} 1 {ObjectIds.ScythePart2} 1/Field/{ObjectIds.WorkingScythe}/false/default/";
                 });
             }
             else if (e.NameWithoutLocale.IsEquivalentTo("Data/Mail"))
@@ -401,8 +452,10 @@ namespace Pathoschild.Stardew.TractorMod.Questable
                     var mailItems = editor.AsDictionary<string, string>().Data;
                     // TODO: i18n
                     mailItems[MailKeys.BuildTheGarage] = "Hey there!^I talked with Sebastian about your tractor and he has agreed to work on it, but only if he's got a decent place to work.  I understand that you're just starting out here and don't have a lot of money laying around, so I'm willing to do it at-cost, providing you can come up with the materials.  Come by my shop for a full list of materials.  See you soon!^  - Robin";
-                    mailItems[MailKeys.FixTheEngine] = $"I got everything working except this engine.  I've never seen anything like it.  I mean, it's like it doesn't even need gas!^I don't know what you're gonna need to do to make it work, but I know I'm out of my area here.^If you manage to figure it out, bring it back up to my place and I'll see about getting it installed.^  - Sebastian"
+                    mailItems[MailKeys.FixTheEngine] = "I got everything working except this engine.  I've never seen anything like it.  I mean, it's like it doesn't even need gas!^I don't know what you're gonna need to do to make it work, but I know I'm out of my area here.^If you manage to figure it out, bring it back up to my place and I'll see about getting it installed.^  - Sebastian"
                                                       + $"%item object {ObjectIds.BustedEngine} 1%%";
+                    mailItems[MailKeys.FixTheWaterer] = "Thanks for letting me work on this!  I even let my Dad do some of the work on it so that he got to feel like maybe he finally did make good on his promise to your Granddad all those years ago.  But me, well, I just like gadgets!  If it ever breaks down, let me know, I have a 10-year warranty on all my work :)"
+                                                      + $"%item object {ObjectIds.WorkingWaterer} 1%%";
                 });
             }
         }

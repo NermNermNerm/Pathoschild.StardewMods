@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using HarmonyLib;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -15,6 +16,7 @@ using Pathoschild.Stardew.TractorMod.Framework.ModAttachments;
 using Pathoschild.Stardew.TractorMod.Questable;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
+using StardewModdingAPI.Framework.ModLoading.Rewriters.StardewValley_1_5;
 using StardewModdingAPI.Utilities;
 using StardewValley;
 using StardewValley.Buildings;
@@ -135,7 +137,6 @@ namespace Pathoschild.Stardew.TractorMod
                 this.Monitor.Log("The translation files in this mod's i18n folder seem to be missing. The mod will still work, but you'll see 'missing translation' messages. Try reinstalling the mod to fix this.", LogLevel.Warn);
         }
 
-
         /*********
         ** Private methods
         *********/
@@ -176,6 +177,7 @@ namespace Pathoschild.Stardew.TractorMod
         /// <param name="e">The event data.</param>
         private void OnSaveLoaded(object? sender, SaveLoadedEventArgs e)
         {
+
             // load legacy data
             Migrator.AfterLoad(this.Helper, this.Monitor, this.ModManifest.Version);
 
