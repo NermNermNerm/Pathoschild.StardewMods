@@ -106,7 +106,8 @@ namespace Pathoschild.Stardew.TractorMod.Framework
                 e.LoadFrom(() => this.GarageTexture, AssetLoadPriority.Low);
 
             // load tractor, garage, or buff texture
-            if (e.NameWithoutLocale.IsEquivalentTo($"{this.PublicAssetBasePath}/Tractor") || e.NameWithoutLocale.IsEquivalentTo($"{this.PublicAssetBasePath}/Garage") || e.NameWithoutLocale.IsEquivalentTo($"{this.PublicAssetBasePath}/BuffIcon"))
+            if (e.NameWithoutLocale.IsEquivalentTo($"{this.PublicAssetBasePath}/Tractor") || e.NameWithoutLocale.IsEquivalentTo($"{this.PublicAssetBasePath}/Garage") || e.NameWithoutLocale.IsEquivalentTo($"{this.PublicAssetBasePath}/BuffIcon")
+                || e.NameWithoutLocale.IsEquivalentTo($"{this.PublicAssetBasePath}/QuestSprites"))
             {
                 string key = PathUtilities.GetSegments(e.NameWithoutLocale.Name).Last();
                 e.LoadFrom(

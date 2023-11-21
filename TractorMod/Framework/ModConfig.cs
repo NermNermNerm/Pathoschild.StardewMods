@@ -23,7 +23,10 @@ namespace Pathoschild.Stardew.TractorMod.Framework
         /// <summary>The magnetic radius when riding the tractor.</summary>
         public int MagneticRadius { get; set; } = 384;
 
-        /// <summary>The gold price to buy a tractor garage.</summary>
+        /// <summary>If true, the tractor is acquired through a series of quests.  If false, you just buy it in one shot.</summary>
+        public bool QuestDriven { get; set; } = true;
+
+        /// <summary>The gold price to buy a tractor garage when <see cref="QuestDriven"/> is false.</summary>
         public int BuildPrice { get; set; } = 150000;
 
         /// <summary>The materials needed to to buy the garage.</summary>

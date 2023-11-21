@@ -1,22 +1,32 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using HarmonyLib;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
 using Pathoschild.Stardew.Common;
 using Pathoschild.Stardew.Common.Utilities;
 using Pathoschild.Stardew.TractorMod.Framework;
 using Pathoschild.Stardew.TractorMod.Framework.Attachments;
 using Pathoschild.Stardew.TractorMod.Framework.Config;
 using Pathoschild.Stardew.TractorMod.Framework.ModAttachments;
+using Pathoschild.Stardew.TractorMod.Questable;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
+using StardewModdingAPI.Framework.ModLoading.Rewriters.StardewValley_1_5;
 using StardewModdingAPI.Utilities;
 using StardewValley;
 using StardewValley.Buildings;
 using StardewValley.Characters;
+using StardewValley.Extensions;
 using StardewValley.GameData.Buildings;
+using StardewValley.GameData.Objects;
 using StardewValley.Locations;
+using StardewValley.Objects;
+using StardewValley.TerrainFeatures;
 
 namespace Pathoschild.Stardew.TractorMod
 {
@@ -62,6 +72,8 @@ namespace Pathoschild.Stardew.TractorMod
         /// <summary>Manages textures loaded for the tractor and garage.</summary>
         private TextureManager TextureManager = null!; // set in Entry
 
+        private QuestSetup QuestSetup = null!;
+
         /// <summary>The backing field for <see cref="TractorManager"/>.</summary>
         private PerScreen<TractorManager> TractorManagerImpl = null!; // set in Entry
 
@@ -101,6 +113,8 @@ namespace Pathoschild.Stardew.TractorMod
             });
             this.UpdateConfig();
 
+            this.QuestSetup = new QuestSetup(this);
+
             // hook events
             IModEvents events = helper.Events;
             events.Content.AssetRequested += this.OnAssetRequested;
@@ -122,7 +136,6 @@ namespace Pathoschild.Stardew.TractorMod
             if (!helper.Translation.GetTranslations().Any())
                 this.Monitor.Log("The translation files in this mod's i18n folder seem to be missing. The mod will still work, but you'll see 'missing translation' messages. Try reinstalling the mod to fix this.", LogLevel.Warn);
         }
-
 
         /*********
         ** Private methods
@@ -164,6 +177,7 @@ namespace Pathoschild.Stardew.TractorMod
         /// <param name="e">The event data.</param>
         private void OnSaveLoaded(object? sender, SaveLoadedEventArgs e)
         {
+
             // load legacy data
             Migrator.AfterLoad(this.Helper, this.Monitor, this.ModManifest.Version);
 
@@ -198,6 +212,8 @@ namespace Pathoschild.Stardew.TractorMod
             // reload textures
             this.TextureManager.UpdateTextures();
 
+            this.QuestSetup.OnDayStarted(this.GetGaragesIn(Game1.getFarm()).FirstOrDefault());
+
             // init garages + tractors
             if (Context.IsMainPlayer)
             {
@@ -205,17 +221,27 @@ namespace Pathoschild.Stardew.TractorMod
                 {
                     foreach (Stable garage in this.GetGaragesIn(location))
                     {
+
                         // spawn new tractor if needed
                         Horse? tractor = this.FindHorse(garage.HorseId);
                         if (!garage.isUnderConstruction())
                         {
                             Vector2 tractorTile = this.GetDefaultTractorTile(garage);
-                            if (tractor == null)
+                            if (tractor == null && (!this.Config.QuestDriven || this.QuestSetup.IsTractorUnlocked))
                             {
                                 tractor = new Horse(garage.HorseId, (int)tractorTile.X, (int)tractorTile.Y);
                                 location.addCharacter(tractor);
                             }
-                            tractor.DefaultPosition = tractorTile;
+                            else if (tractor is not null && this.Config.QuestDriven && !this.QuestSetup.IsTractorUnlocked)
+                            {
+                                location.characters.Remove(tractor);
+                                tractor = null;
+                            }
+
+                            if (tractor is not null)
+                            {
+                                tractor.DefaultPosition = tractorTile;
+                            }
                         }
 
                         // normalize tractor
@@ -234,6 +260,8 @@ namespace Pathoschild.Stardew.TractorMod
             }
         }
 
+
+
         /// <inheritdoc cref="IContentEvents.AssetRequested"/>
         /// <param name="sender">The event sender.</param>
         /// <param name="e">The event data.</param>
@@ -241,35 +269,39 @@ namespace Pathoschild.Stardew.TractorMod
         {
             this.AudioManager.OnAssetRequested(e);
             this.TextureManager.OnAssetRequested(e);
+            this.QuestSetup.OnAssetRequested(e, this.Config);
 
             if (e.NameWithoutLocale.IsEquivalentTo("Data/Buildings"))
             {
                 e.Edit(editor =>
                 {
-                    var data = editor.AsDictionary<string, BuildingData>().Data;
-
-                    data[this.GarageBuildingId] = new BuildingData
+                    if (!this.Config.QuestDriven)
                     {
-                        Name = I18n.Garage_Name(),
-                        Description = I18n.Garage_Description(),
-                        Texture = $"{this.PublicAssetBasePath}/Garage",
-                        BuildingType = typeof(Stable).FullName,
-                        SortTileOffset = 1,
+                        var data = editor.AsDictionary<string, BuildingData>().Data;
+                        data[this.GarageBuildingId] = new BuildingData
+                        {
+                            Name = I18n.Garage_Name(),
+                            Description = I18n.Garage_Description(),
+                            Texture = $"{this.PublicAssetBasePath}/Garage",
+                            BuildingType = typeof(Stable).FullName,
+                            SortTileOffset = 1,
 
-                        Builder = Game1.builder_robin,
-                        BuildCost = this.Config.BuildPrice,
-                        BuildMaterials = this.Config.BuildMaterials
-                            .Select(p => new BuildingMaterial
-                            {
-                                ItemId = p.Key,
-                                Amount = p.Value
-                            })
-                            .ToList(),
-                        BuildDays = 2,
+                            Builder = Game1.builder_robin,
+                            BuildCost = this.Config.BuildPrice,
+                            BuildMaterials = this.Config.BuildMaterials
+                                .Select(p => new BuildingMaterial
+                                {
+                                    ItemId = p.Key,
+                                    Amount = p.Value
+                                })
+                                .ToList(),
+                            BuildDays = 2,
 
-                        Size = new Point(4, 2),
-                        CollisionMap = "XXXX\nXOOX"
-                    };
+                            Size = new Point(4, 2),
+                            CollisionMap = "XXXX\nXOOX"
+                        };
+                    }
+
                 });
             }
         }
@@ -376,6 +408,8 @@ namespace Pathoschild.Stardew.TractorMod
             if (!this.IsEnabled)
                 return;
 
+            this.QuestSetup.OnDayEnding();
+
             if (Context.IsMainPlayer)
             {
                 // collect valid stable IDs
@@ -407,6 +441,7 @@ namespace Pathoschild.Stardew.TractorMod
                             Game1.warpCharacter(tractor, "Farm", new Point(0, 0));
                     }
                 }
+
             }
         }
 
@@ -470,13 +505,14 @@ namespace Pathoschild.Stardew.TractorMod
         ** Helper methods
         ****/
         /// <summary>Reapply the mod configuration.</summary>
-        private void UpdateConfig()
+        internal void UpdateConfig()
         {
             this.Helper.GameContent.InvalidateCache("Data/Buildings");
 
             foreach (var pair in this.TractorManagerImpl.GetActiveValues())
                 this.UpdateConfigFor(pair.Value);
         }
+
 
         /// <summary>Apply the mod configuration to a tractor manager instance.</summary>
         /// <param name="manager">The tractor manager to update.</param>
@@ -486,24 +522,28 @@ namespace Pathoschild.Stardew.TractorMod
             var reflection = this.Helper.Reflection;
             var toolConfig = this.Config.StandardAttachments;
 
+            TConfig questConfig<TConfig>(TConfig baseConfig, Func<TConfig, TConfig> questGetter)
+                where TConfig : new()
+                => this.Config.QuestDriven ? questGetter(baseConfig) : baseConfig;
+
             manager.UpdateConfig(this.Config, this.Keys, new IAttachment?[]
             {
                 new CustomAttachment(this.Config.CustomAttachments, modRegistry, reflection), // should be first so it can override default attachments
-                new AxeAttachment(toolConfig.Axe, modRegistry, reflection),
-                new FertilizerAttachment(toolConfig.Fertilizer, modRegistry, reflection),
-                new GrassStarterAttachment(toolConfig.GrassStarter, modRegistry, reflection),
-                new HoeAttachment(toolConfig.Hoe, modRegistry, reflection),
-                new MeleeBluntAttachment(toolConfig.MeleeBlunt, modRegistry, reflection),
-                new MeleeDaggerAttachment(toolConfig.MeleeDagger, modRegistry, reflection),
-                new MeleeSwordAttachment(toolConfig.MeleeSword, modRegistry, reflection),
-                new MilkPailAttachment(toolConfig.MilkPail, modRegistry, reflection),
-                new PickaxeAttachment(toolConfig.PickAxe, modRegistry, reflection),
-                new ScytheAttachment(toolConfig.Scythe, modRegistry, reflection),
-                new SeedAttachment(toolConfig.Seeds, modRegistry, reflection),
-                modRegistry.IsLoaded(SeedBagAttachment.ModId) ? new SeedBagAttachment(toolConfig.SeedBagMod, modRegistry, reflection) : null,
-                new ShearsAttachment(toolConfig.Shears, modRegistry, reflection),
-                new SlingshotAttachment(toolConfig.Slingshot, modRegistry, reflection),
-                new WateringCanAttachment(toolConfig.WateringCan, modRegistry, reflection)
+                new AxeAttachment(questConfig(toolConfig.Axe, this.QuestSetup.GetAxeConfig), modRegistry, reflection),
+                new FertilizerAttachment(questConfig(toolConfig.Fertilizer, this.QuestSetup.GetSeederConfig), modRegistry, reflection),
+                new GrassStarterAttachment(questConfig(toolConfig.GrassStarter, this.QuestSetup.GetSeederConfig), modRegistry, reflection),
+                new HoeAttachment(questConfig(toolConfig.Hoe, this.QuestSetup.GetHoeConfig), modRegistry, reflection),
+                new MeleeBluntAttachment(questConfig(toolConfig.MeleeBlunt, this.QuestSetup.GetUnsupportedConfig), modRegistry, reflection),
+                new MeleeDaggerAttachment(questConfig(toolConfig.MeleeDagger, this.QuestSetup.GetUnsupportedConfig), modRegistry, reflection),
+                new MeleeSwordAttachment(questConfig(toolConfig.MeleeSword, this.QuestSetup.GetUnsupportedConfig), modRegistry, reflection),
+                new MilkPailAttachment(questConfig(toolConfig.MilkPail, this.QuestSetup.GetUnsupportedConfig), modRegistry, reflection),
+                new PickaxeAttachment(questConfig(toolConfig.PickAxe, this.QuestSetup.GetPickConfig), modRegistry, reflection),
+                new ScytheAttachment(questConfig(toolConfig.Scythe, this.QuestSetup.GetScytheConfig), modRegistry, reflection),
+                new SeedAttachment(questConfig(toolConfig.Seeds, this.QuestSetup.GetSeederConfig), modRegistry, reflection),
+                modRegistry.IsLoaded(SeedBagAttachment.ModId) ? new SeedBagAttachment(questConfig(toolConfig.SeedBagMod, this.QuestSetup.GetSeederConfig), modRegistry, reflection) : null,
+                new ShearsAttachment(questConfig(toolConfig.Shears, this.QuestSetup.GetUnsupportedConfig), modRegistry, reflection),
+                new SlingshotAttachment(questConfig(toolConfig.Slingshot, this.QuestSetup.GetUnsupportedConfig), modRegistry, reflection),
+                new WateringCanAttachment(questConfig(toolConfig.WateringCan, this.QuestSetup.GetWateringCanConfig), modRegistry, reflection)
             });
         }
 
