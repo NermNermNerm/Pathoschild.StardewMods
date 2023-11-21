@@ -530,8 +530,8 @@ namespace Pathoschild.Stardew.TractorMod
             {
                 new CustomAttachment(this.Config.CustomAttachments, modRegistry, reflection), // should be first so it can override default attachments
                 new AxeAttachment(questConfig(toolConfig.Axe, this.QuestSetup.GetAxeConfig), modRegistry, reflection),
-                new FertilizerAttachment(questConfig(toolConfig.Fertilizer, this.QuestSetup.GetSpreaderConfig), modRegistry, reflection),
-                new GrassStarterAttachment(questConfig(toolConfig.GrassStarter, this.QuestSetup.GetSpreaderConfig), modRegistry, reflection),
+                new FertilizerAttachment(questConfig(toolConfig.Fertilizer, this.QuestSetup.GetSeederConfig), modRegistry, reflection),
+                new GrassStarterAttachment(questConfig(toolConfig.GrassStarter, this.QuestSetup.GetSeederConfig), modRegistry, reflection),
                 new HoeAttachment(questConfig(toolConfig.Hoe, this.QuestSetup.GetHoeConfig), modRegistry, reflection),
                 new MeleeBluntAttachment(questConfig(toolConfig.MeleeBlunt, this.QuestSetup.GetUnsupportedConfig), modRegistry, reflection),
                 new MeleeDaggerAttachment(questConfig(toolConfig.MeleeDagger, this.QuestSetup.GetUnsupportedConfig), modRegistry, reflection),
@@ -539,8 +539,8 @@ namespace Pathoschild.Stardew.TractorMod
                 new MilkPailAttachment(questConfig(toolConfig.MilkPail, this.QuestSetup.GetUnsupportedConfig), modRegistry, reflection),
                 new PickaxeAttachment(questConfig(toolConfig.PickAxe, this.QuestSetup.GetPickConfig), modRegistry, reflection),
                 new ScytheAttachment(questConfig(toolConfig.Scythe, this.QuestSetup.GetScytheConfig), modRegistry, reflection),
-                new SeedAttachment(questConfig(toolConfig.Seeds, this.QuestSetup.GetSpreaderConfig), modRegistry, reflection),
-                modRegistry.IsLoaded(SeedBagAttachment.ModId) ? new SeedBagAttachment(questConfig(toolConfig.SeedBagMod, this.QuestSetup.GetSpreaderConfig), modRegistry, reflection) : null,
+                new SeedAttachment(questConfig(toolConfig.Seeds, this.QuestSetup.GetSeederConfig), modRegistry, reflection),
+                modRegistry.IsLoaded(SeedBagAttachment.ModId) ? new SeedBagAttachment(questConfig(toolConfig.SeedBagMod, this.QuestSetup.GetSeederConfig), modRegistry, reflection) : null,
                 new ShearsAttachment(questConfig(toolConfig.Shears, this.QuestSetup.GetUnsupportedConfig), modRegistry, reflection),
                 new SlingshotAttachment(questConfig(toolConfig.Slingshot, this.QuestSetup.GetUnsupportedConfig), modRegistry, reflection),
                 new WateringCanAttachment(questConfig(toolConfig.WateringCan, this.QuestSetup.GetWateringCanConfig), modRegistry, reflection)
