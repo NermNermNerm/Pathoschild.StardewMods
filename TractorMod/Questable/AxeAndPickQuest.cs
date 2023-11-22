@@ -4,6 +4,7 @@ using Microsoft.Xna.Framework;
 using StardewModdingAPI;
 using StardewValley;
 using StardewValley.Quests;
+using StardewValley.TerrainFeatures;
 using static Pathoschild.Stardew.TractorMod.Questable.QuestSetup;
 
 namespace Pathoschild.Stardew.TractorMod.Questable
@@ -113,7 +114,6 @@ namespace Pathoschild.Stardew.TractorMod.Questable
 
         internal static void OnDayStart(IModHelper helper, IMonitor monitor)
         {
-
             if (!Game1.player.modData.TryGetValue(ModDataKeys.AxeAndPickQuestStatus, out string? statusAsString)
                 || !Enum.TryParse(statusAsString, true, out AxeAndPickQuestState axeAndPickQuestStatus))
             {
@@ -126,6 +126,7 @@ namespace Pathoschild.Stardew.TractorMod.Questable
 
             if (axeAndPickQuestStatus == AxeAndPickQuestState.NotStarted)
             {
+                AttachmentQuestBase.PlaceQuestItemUnderClump(monitor, ResourceClump.boulderIndex, ObjectIds.BustedLoader);
                 if (!Game1.getFarm().objects.Values.Any(o => o.ItemId == ObjectIds.BustedLoader))
                 {
                     // TODO: Pick a spot randomly

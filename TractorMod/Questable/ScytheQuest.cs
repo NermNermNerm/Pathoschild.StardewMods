@@ -311,29 +311,7 @@ namespace Pathoschild.Stardew.TractorMod.Questable
             if (state == ScytheQuestState.NotStarted)
             {
                 var farm = Game1.getFarm();
-                if (!farm.objects.Values.Any(o => o.ItemId == ObjectIds.BustedScythe))
-                {
-                    var bottomMostLog = farm.resourceClumps.Where(tf => tf.parentSheetIndex.Value == ResourceClump.hollowLogIndex).OrderByDescending(tf => tf.Tile.Y).FirstOrDefault();
-                    if (bottomMostLog is null)
-                    {
-                        monitor.Log($"The farm contains no hollow logs under which to stick the scythe", LogLevel.Warn);
-
-                        // Although I'm pretty sure all farms will have a log, fall back to any resource clump
-                        bottomMostLog = farm.resourceClumps.OrderByDescending(tf => tf.Tile.Y).FirstOrDefault();
-                        if (bottomMostLog is null)
-                        {
-                            monitor.Log($"The farm contains no resource clumps under which to stick the scythe", LogLevel.Error);
-                            // TODO: Fall back to finding an open spot for it?  This would happen if the user enables this mod on an old save where the whole farm has been cleared.
-                            return;
-                        }
-                    }
-
-                    var o = ItemRegistry.Create<StardewValley.Object>(ObjectIds.BustedScythe);
-                    o.Location = Game1.getFarm();
-                    o.TileLocation = bottomMostLog.Tile;
-                    o.IsSpawnedObject = true;
-                    _ = farm.objects.TryAdd(o.TileLocation, o);
-                }
+                AttachmentQuestBase.PlaceQuestItemUnderClump(monitor, ResourceClump.hollowLogIndex, ObjectIds.BustedScythe);
             }
 
             if (state != ScytheQuestState.NotStarted && state != ScytheQuestState.Complete)
