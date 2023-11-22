@@ -58,7 +58,7 @@ namespace Pathoschild.Stardew.TractorMod.Questable
                 bool anyCollisions = false;
                 List<Vector2> tilesToClear = new List<Vector2>();
                 // note that trees are 3-wide, and this only looks at the leftmost pair, so we're leaving a little money on the table.
-                foreach (var offset in new Vector2[] { new Vector2(0, -1), new Vector2(1, -1) })
+                foreach (var offset in new Vector2[] { new Vector2(0, -2), new Vector2(1, -2) })
                 {
                     var posToCheck = eastSideTree.Tile + offset;
                     var objAtOffset = farm.getObjectAtTile((int)posToCheck.X, (int)posToCheck.Y);
@@ -91,7 +91,7 @@ namespace Pathoschild.Stardew.TractorMod.Questable
                         farm.objects.Remove(tileToClear);
                     }
 
-                    return eastSideTree.Tile + new Vector2(0, -1);
+                    return eastSideTree.Tile + new Vector2(0, -2);
                 }
             }
 
