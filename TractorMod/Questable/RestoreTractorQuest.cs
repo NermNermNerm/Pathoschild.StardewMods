@@ -81,10 +81,6 @@ namespace Pathoschild.Stardew.TractorMod.Questable
                 case RestorationState.WaitForEngineInstall:
                     this.currentObjective = "Maru says that after the engine is installed, it should actually run!  Just have to wait a little bit longer...";
                     break;
-
-                default:
-                    this.currentObjective = "TODO"; // Unreachable, barring a code bug.
-                    break;
             }
         }
 
@@ -194,7 +190,6 @@ namespace Pathoschild.Stardew.TractorMod.Questable
 
             return true;
         }
-
 
         public static void OnDayStart(IModHelper helper, IMonitor monitor, Stable? garage)
         {
