@@ -74,6 +74,9 @@ namespace Pathoschild.Stardew.TractorMod.Questable
             this.SetObjective();
         }
 
+        public static bool IsStarted => GetModConfig<SeederQuestState>(ModDataKeys.SeederQuestStatus) != SeederQuestState.NotStarted;
+
+
         public void ReadyToInstall()
         {
             this.state = SeederQuestState.InstallPart;
@@ -277,9 +280,9 @@ namespace Pathoschild.Stardew.TractorMod.Questable
             return Enum.TryParse(s, out state);
         }
 
-        internal static void OnDayStart(ModEntry mod, bool isTractorUnlocked)
+        internal static void OnDayStart(ModEntry mod)
         {
-            if (Game1.player.getFriendshipHeartLevelForNPC("George") >= georgeSendsCanHeartLevel && isTractorUnlocked && !Game1.player.modData.ContainsKey(QuestSetup.ModDataKeys.SeederQuestGeorgeSentMail))
+            if (Game1.player.getFriendshipHeartLevelForNPC("George") >= georgeSendsCanHeartLevel && RestoreTractorQuest.IsTractorUnlocked && !Game1.player.modData.ContainsKey(QuestSetup.ModDataKeys.SeederQuestGeorgeSentMail))
             {
                 Game1.player.mailbox.Add(QuestSetup.MailKeys.GeorgeSeederMail);
                 Game1.player.modData[QuestSetup.ModDataKeys.SeederQuestGeorgeSentMail] = "sent";

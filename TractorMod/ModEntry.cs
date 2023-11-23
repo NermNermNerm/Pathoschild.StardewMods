@@ -227,12 +227,12 @@ namespace Pathoschild.Stardew.TractorMod
                         if (!garage.isUnderConstruction())
                         {
                             Vector2 tractorTile = this.GetDefaultTractorTile(garage);
-                            if (tractor == null && (!this.Config.QuestDriven || this.QuestSetup.IsTractorUnlocked))
+                            if (tractor == null && (!this.Config.QuestDriven || RestoreTractorQuest.IsTractorUnlocked))
                             {
                                 tractor = new Horse(garage.HorseId, (int)tractorTile.X, (int)tractorTile.Y);
                                 location.addCharacter(tractor);
                             }
-                            else if (tractor is not null && this.Config.QuestDriven && !this.QuestSetup.IsTractorUnlocked)
+                            else if (tractor is not null && this.Config.QuestDriven && !RestoreTractorQuest.IsTractorUnlocked)
                             {
                                 location.characters.Remove(tractor);
                                 tractor = null;

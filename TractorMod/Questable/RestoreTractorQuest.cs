@@ -6,7 +6,6 @@ using StardewValley;
 using StardewValley.Buildings;
 using StardewValley.Objects;
 using StardewValley.Quests;
-using static Pathoschild.Stardew.TractorMod.Questable.QuestSetup;
 
 namespace Pathoschild.Stardew.TractorMod.Questable
 {
@@ -28,6 +27,16 @@ namespace Pathoschild.Stardew.TractorMod.Questable
             this.questTitle = "Investigate the tractor";
             this.questDescription = "There's a rusty old tractor in the fields; it sure would be nice if it could be restored.  Perhaps the townspeople can help.";
             this.SetState(state);
+        }
+
+        public static bool IsTractorUnlocked
+        {
+            get => QuestSetup.GetModConfig<RestorationState>(QuestSetup.ModDataKeys.MainQuestStatus) == RestorationState.Complete;
+        }
+
+        public static bool IsStarted
+        {
+            get => QuestSetup.GetModConfig<RestorationState>(QuestSetup.ModDataKeys.MainQuestStatus) != RestorationState.NotStarted;
         }
 
         private void SetState(RestorationState state)
@@ -193,12 +202,12 @@ namespace Pathoschild.Stardew.TractorMod.Questable
 
         public static void OnDayStart(IModHelper helper, IMonitor monitor, Stable? garage)
         {
-            if (!Game1.player.modData.TryGetValue(ModDataKeys.MainQuestStatus, out string? statusAsString)
+            if (!Game1.player.modData.TryGetValue(QuestSetup.ModDataKeys.MainQuestStatus, out string? statusAsString)
                 || !Enum.TryParse(statusAsString, true, out RestorationState mainQuestStatusAtDayStart))
             {
                 if (statusAsString is not null)
                 {
-                    monitor.Log($"Invalid value for {ModDataKeys.MainQuestStatus}: {statusAsString} -- reverting to NotStarted", LogLevel.Error);
+                    monitor.Log($"Invalid value for {QuestSetup.ModDataKeys.MainQuestStatus}: {statusAsString} -- reverting to NotStarted", LogLevel.Error);
                 }
                 mainQuestStatusAtDayStart = RestorationState.NotStarted;
             }
@@ -233,7 +242,7 @@ namespace Pathoschild.Stardew.TractorMod.Questable
                 var q = new RestoreTractorQuest(mainQuestStatus);
                 Game1.player.questLog.Add(q);
                 q.questComplete();
-                Game1.player.modData[ModDataKeys.MainQuestStatus] = RestorationState.Complete.ToString();
+                Game1.player.modData[QuestSetup.ModDataKeys.MainQuestStatus] = RestorationState.Complete.ToString();
             }
         }
 

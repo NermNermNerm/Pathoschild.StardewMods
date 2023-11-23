@@ -37,6 +37,9 @@ namespace Pathoschild.Stardew.TractorMod.Questable
             this.SetObjective();
         }
 
+        public static bool IsStarted => GetModConfig<ScytheQuestState>(ModDataKeys.ScytheQuestStatus) != ScytheQuestState.NotStarted;
+
+
         public void ReadyToInstall()
         {
             this.investigationState = ScytheQuestState.InstallPart;

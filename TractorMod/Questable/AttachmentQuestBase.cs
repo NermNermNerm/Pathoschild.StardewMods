@@ -9,9 +9,11 @@ using StardewValley.TerrainFeatures;
 using StardewValley;
 using static Pathoschild.Stardew.TractorMod.Questable.QuestSetup;
 using Microsoft.Xna.Framework;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Pathoschild.Stardew.TractorMod.Questable
 {
+
     public class AttachmentQuestBase
     {
         public static void PlaceQuestItemUnderClump(IMonitor monitor, int preferredClumpType, string questStarterObjectId)

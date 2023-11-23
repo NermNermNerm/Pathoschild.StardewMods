@@ -31,6 +31,8 @@ namespace Pathoschild.Stardew.TractorMod.Questable
             this.SetObjective();
         }
 
+        public static bool IsStarted => GetModConfig<WatererQuestState>(ModDataKeys.WateringQuestStatus) != WatererQuestState.NotStarted;
+
         public void ReadyToInstall()
         {
             this.investigationState = WatererQuestState.InstallPart;
@@ -190,7 +192,7 @@ namespace Pathoschild.Stardew.TractorMod.Questable
 
         public static float chanceOfCatchingQuestItem = 0;
 
-        internal static void OnDayStart(IModHelper helper, IMonitor monitor, bool isTractorUnlocked)
+        internal static void OnDayStart(IModHelper helper, IMonitor monitor)
         {
             Game1.player.modData.TryGetValue(ModDataKeys.WateringQuestStatus, out string? statusAsString);
             if (!TryParseQuestStatus(statusAsString, out WatererQuestState state))
@@ -204,7 +206,7 @@ namespace Pathoschild.Stardew.TractorMod.Questable
             {
                 chanceOfCatchingQuestItem = 0; // No chance - already pulled it up.
             }
-            else if (isTractorUnlocked)
+            else if (RestoreTractorQuest.IsTractorUnlocked)
             {
                 chanceOfCatchingQuestItem = 0.01f + Game1.Date.TotalDays / 200f;
             }

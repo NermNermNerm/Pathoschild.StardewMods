@@ -46,6 +46,10 @@ namespace Pathoschild.Stardew.TractorMod.Questable
     ///   has the same shoe size.)
     ///  </para>
     ///  <para>
+    ///    If you talk to Linus and you have 3 hearts, he'll offer to look out for them.  If you don't
+    ///    find the shoes yourself in 3 days, he'll mail a pair.
+    ///  </para>
+    ///  <para>
     ///   But having Alex's shoes isn't good enough, and you have to dye them.  Once you dye them, you
     ///   can present them to Clint along with 10 copper bars and he'll get to work on it.
     ///  </para>
@@ -67,6 +71,8 @@ namespace Pathoschild.Stardew.TractorMod.Questable
         {
             this.showNew.Value = true;
         }
+
+        public static bool IsStarted => GetModConfig<AxeAndPickQuestState>(ModDataKeys.AxeAndPickQuestStatus) != AxeAndPickQuestState.NotStarted;
 
         private void SetState(AxeAndPickQuestState state)
         {
