@@ -1,11 +1,8 @@
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Linq;
 using HarmonyLib;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
 using Pathoschild.Stardew.TractorMod.Framework;
 using Pathoschild.Stardew.TractorMod.Framework.Config;
 using StardewModdingAPI;
@@ -14,24 +11,30 @@ using StardewValley;
 using StardewValley.Buildings;
 using StardewValley.GameData.Buildings;
 using StardewValley.GameData.Objects;
-using StardewValley.Network;
-using StardewValley.Tools;
 
 namespace Pathoschild.Stardew.TractorMod.Questable
 {
     public class QuestSetup
     {
+        private readonly IReadOnlyCollection<BaseQuestController> QuestControllers;
+
         // Mirrored from ModEntry  IMO, this is how it should be declared there.  Doing it this way for least-intrusion.
         public const string GarageBuildingId = "Pathoschild.TractorMod_Stable";
         public const string PublicAssetBasePath = "Mods/Pathoschild.TractorMod";
 
         private ModEntry mod;
 
-        private IModHelper Helper => this.mod.Helper;
-        private IMonitor Monitor => this.mod.Monitor;
+        public IModHelper Helper => this.mod.Helper;
+        public IMonitor Monitor => this.mod.Monitor;
 
         internal QuestSetup(ModEntry mod)
         {
+            this.QuestControllers = new List<BaseQuestController> {
+                new AxeAndPickQuestController(this),
+                new ScytheQuestController(this),
+                new SeederQuestController(this),
+                new WatererQuestController(this),
+            };
             this.mod = mod;
 
             this.Helper.Events.Player.InventoryChanged += this.Player_InventoryChanged;
@@ -45,7 +48,13 @@ namespace Pathoschild.Stardew.TractorMod.Questable
 
         private static bool Prefix_GetFish(ref Item __result)
         {
-            if (Game1.random.NextDouble() < WatererQuest.chanceOfCatchingQuestItem)
+            // TODO: Maybe it'd be cool if we somehow make this cast fail, tell the player that they snagged something big,
+            //  remember the position (there's a vector2 where it hits in), and make it so that if they land the bobber in the same
+            //  spot they always get the "chance".  If they do this twice in one day, they'll get a suggestion to go to Willy's
+            //  shop and see if he's got anything.  If they do, they'll see a "Whale catcher rental", which looks like a winch.
+            //  This item will disappear from inventory at the end of the day.  If they are using that when they snag the part,
+            //  it comes out.
+            if (Game1.random.NextDouble() < WatererQuestController.chanceOfCatchingQuestItem)
             {
                 __result = ItemRegistry.Create(ObjectIds.BustedWaterer);
                 return false;
@@ -56,41 +65,23 @@ namespace Pathoschild.Stardew.TractorMod.Questable
             }
         }
 
+        private void UpdateTractorModConfig()
+        {
+            this.mod.UpdateConfig();
+        }
+
         private void GameLoop_OneSecondUpdateTicked(object? sender, OneSecondUpdateTickedEventArgs e)
         {
-            // Hacky way to detect when the player when a quest is open
-            if (Game1.player.currentLocation is not null && Game1.player.currentLocation == Game1.getFarm() &&
-                (Game1.player.CurrentItem?.Name == ObjectIds.WorkingLoader
-                || Game1.player.CurrentItem?.Name == ObjectIds.WorkingScythe
-                || Game1.player.CurrentItem?.Name == ObjectIds.WorkingSeeder
-                || Game1.player.CurrentItem?.Name == ObjectIds.WorkingWaterer))
+            var itemInHand = Game1.player.CurrentItem;
+            if (itemInHand is null)
             {
-                if (Game1.player.currentLocation.buildings
-                    .OfType<Stable>()
-                    .Where(s => s.buildingType.Value == GarageBuildingId)
-                    .Any(s => IsPlayerInGarage(Game1.player, s)))
-                {
-                    switch (Game1.player.CurrentItem?.Name)
-                    {
-                        case ObjectIds.WorkingLoader:
-                            var loaderQuest = Game1.player.questLog.OfType<AxeAndPickQuest>().FirstOrDefault();
-                            loaderQuest?.WorkingAttachmentBroughtToGarage();
-                            break;
-                        case ObjectIds.WorkingScythe:
-                            var scytheQuest = Game1.player.questLog.OfType<ScytheQuest>().FirstOrDefault();
-                            scytheQuest?.WorkingAttachmentBroughtToGarage();
-                            break;
-                        case ObjectIds.WorkingSeeder:
-                            var seederQuest = Game1.player.questLog.OfType<SeederQuest>().FirstOrDefault();
-                            seederQuest?.WorkingAttachmentBroughtToGarage();
-                            break;
-                        case ObjectIds.WorkingWaterer:
-                            var watererQuest = Game1.player.questLog.OfType<WatererQuest>().FirstOrDefault();
-                            watererQuest?.WorkingAttachmentBroughtToGarage();
-                            break;
-                    }
-                    this.mod.UpdateConfig();
-                }
+                return;
+            }
+
+            foreach (var qc in this.QuestControllers.Where(qc => qc.WorkingAttachmentPartId == itemInHand.ItemId))
+            {
+                qc.WorkingAttachmentBroughtToGarage();
+                this.UpdateTractorModConfig();
             }
         }
 
@@ -103,52 +94,19 @@ namespace Pathoschild.Stardew.TractorMod.Questable
 
         private void Player_InventoryChanged(object? sender, InventoryChangedEventArgs e)
         {
-            var bustedLoader = e.Added.FirstOrDefault(i => i.ItemId == ObjectIds.BustedLoader);
-            if (bustedLoader is not null && !e.Player.questLog.OfType<AxeAndPickQuest>().Any())
+            foreach (var qc in this.QuestControllers)
             {
-                e.Player.holdUpItemThenMessage(bustedLoader);
-                var quest = new AxeAndPickQuest();
-                e.Player.questLog.Add(quest);
-            }
+                var bustedPart = e.Added.FirstOrDefault(i => i.ItemId == qc.BrokenAttachmentPartId);
+                if (bustedPart is not null)
+                {
+                    qc.PlayerGotBrokenPart(e.Player, bustedPart);
+                }
 
-            var bustedScythe = e.Added.FirstOrDefault(i => i.ItemId == ObjectIds.BustedScythe);
-            if (bustedScythe is not null && !e.Player.questLog.OfType<ScytheQuest>().Any())
-            {
-                e.Player.holdUpItemThenMessage(bustedScythe);
-                var quest = new ScytheQuest();
-                e.Player.questLog.Add(quest);
-            }
-
-            var fixedScythe = e.Added.FirstOrDefault(i => i.ItemId == ObjectIds.WorkingScythe);
-            if (fixedScythe is not null)
-            {
-                var q = e.Player.questLog.OfType<ScytheQuest>().FirstOrDefault();
-                q?.ReadyToInstall();
-                e.Player.holdUpItemThenMessage(fixedScythe, showMessage: false);
-                Game1.DrawDialogue(new Dialogue(null, null, "A little wire brush, some oil, and of course the rest of the parts and job done!  Just need to take it to the garage now!"));
-            }
-
-            var bustedWaterer = e.Added.FirstOrDefault(i => i.ItemId == ObjectIds.BustedWaterer);
-            if (bustedWaterer is not null && !e.Player.questLog.OfType<WatererQuest>().Any())
-            {
-                var quest = new WatererQuest();
-                e.Player.questLog.Add(quest);
-                Game1.DrawDialogue(new Dialogue(null, null, "Whoah that was heavy!  Looks like an irrigator attachment for a tractor!  I bet there's a story behind how it got here..."));
-                WatererQuest.chanceOfCatchingQuestItem = 0;
-            }
-
-            var fixedWaterer = e.Added.FirstOrDefault(i => i.ItemId == ObjectIds.WorkingWaterer);
-            if (fixedWaterer is not null)
-            {
-                var q = e.Player.questLog.OfType<WatererQuest>().FirstOrDefault();
-                q?.ReadyToInstall();
-                Game1.DrawDialogue(new Dialogue(null, null, "Maru came through!  Time to take it to the garage and water some crops!"));
-            }
-
-            var bustedSeeder = e.Added.FirstOrDefault(i => i.ItemId == ObjectIds.BustedSeeder);
-            if (bustedSeeder is not null && !e.Player.questLog.OfType<SeederQuest>().Any())
-            {
-                Game1.player.questLog.Add(new SeederQuest());
+                var workingPart = e.Added.FirstOrDefault(i => i.ItemId == qc.WorkingAttachmentPartId);
+                if (bustedPart is not null)
+                {
+                    qc.PlayerGotWorkingPart(e.Player, bustedPart);
+                }
             }
         }
 
@@ -159,12 +117,13 @@ namespace Pathoschild.Stardew.TractorMod.Questable
                 return;
             }
 
-            RestoreTractorQuest.OnDayStart(this.Helper, this.Monitor, garage);
-            AxeAndPickQuest.OnDayStart(this.Helper, this.Monitor);
-            ScytheQuest.OnDayStart(this.Helper, this.Monitor);
-            WatererQuest.OnDayStart(this.Helper, this.Monitor);
-            SeederQuest.OnDayStart(this.mod);
+            foreach (var qc in this.QuestControllers)
+            {
+                qc.OnDayStart();
+            }
 
+
+            RestoreTractorQuest.OnDayStart(this.Helper, this.Monitor, garage);
             this.SetupMissingPartConversations();
         }
 
@@ -189,28 +148,10 @@ namespace Pathoschild.Stardew.TractorMod.Questable
             }
             else
             {
-                // we want to dribble out the clues, not spew them all at once, so see what's missing...
-                List<string> possibleHintTopics = new List<string>();
-                if (!AxeAndPickQuest.IsStarted)
-                {
-                    possibleHintTopics.Add(ConversationKeys.LoaderNotFound);
-                }
-                if (!ScytheQuest.IsStarted)
-                {
-                    possibleHintTopics.Add(ConversationKeys.ScytheNotFound);
-                }
-                if (!WatererQuest.IsStarted)
-                {
-                    possibleHintTopics.Add(ConversationKeys.WatererNotFound);
-                }
-                if (!SeederQuest.IsStarted)
-                {
-                    possibleHintTopics.Add(ConversationKeys.SeederNotFound);
-                }
-
+                string[] possibleHintTopics = this.QuestControllers.Where(qc => !qc.IsStarted).Select(qc => qc.HintTopicConversationKey).ToArray();
                 if (possibleHintTopics.Any())
                 {
-                    Game1.player.activeDialogueEvents.Add(possibleHintTopics[Game1.random.Next(possibleHintTopics.Count)], 4);
+                    Game1.player.activeDialogueEvents.Add(possibleHintTopics[Game1.random.Next(possibleHintTopics.Length)], 4);
                 }
             }
         }
@@ -231,33 +172,10 @@ namespace Pathoschild.Stardew.TractorMod.Questable
             }
             Game1.player.questLog.RemoveWhere(q => q is RestoreTractorQuest);
 
-            questState = Game1.player.questLog.OfType<AxeAndPickQuest>().FirstOrDefault()?.Serialize();
-            if (questState is not null)
+            foreach (var qc in this.QuestControllers)
             {
-                Game1.player.modData[ModDataKeys.AxeAndPickQuestStatus] = questState;
+                qc.OnDayEnding();
             }
-            Game1.player.questLog.RemoveWhere(q => q is AxeAndPickQuest);
-
-            questState = Game1.player.questLog.OfType<ScytheQuest>().FirstOrDefault()?.Serialize();
-            if (questState is not null)
-            {
-                Game1.player.modData[ModDataKeys.ScytheQuestStatus] = questState;
-            }
-            Game1.player.questLog.RemoveWhere(q => q is ScytheQuest);
-
-            questState = Game1.player.questLog.OfType<WatererQuest>().FirstOrDefault()?.Serialize();
-            if (questState is not null)
-            {
-                Game1.player.modData[ModDataKeys.WateringQuestStatus] = questState;
-            }
-            Game1.player.questLog.RemoveWhere(q => q is WatererQuest);
-
-            questState = Game1.player.questLog.OfType<SeederQuest>().FirstOrDefault()?.Serialize();
-            if (questState is not null)
-            {
-                Game1.player.modData[ModDataKeys.SeederQuestStatus] = questState;
-            }
-            Game1.player.questLog.RemoveWhere(q => q is SeederQuest);
         }
 
         public static T GetModConfig<T>(string key)
@@ -404,7 +322,6 @@ namespace Pathoschild.Stardew.TractorMod.Questable
                 });
             }
         }
-
 
         public static T Disabled<T>() where T : new()
         {

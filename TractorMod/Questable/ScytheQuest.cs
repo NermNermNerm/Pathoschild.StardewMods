@@ -1,19 +1,12 @@
 using System;
 using System.Linq;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Microsoft.Xna.Framework;
-using StardewModdingAPI;
 using StardewValley;
-using StardewValley.Quests;
-using StardewValley.TerrainFeatures;
-using static Pathoschild.Stardew.TractorMod.Questable.QuestSetup;
 
 namespace Pathoschild.Stardew.TractorMod.Questable
 {
-    internal class ScytheQuest
-        : Quest
+    public class ScytheQuest
+        : BaseQuest<ScytheQuestState>
     {
-        private ScytheQuestState investigationState;
         private bool jazTradeKnown;
         private bool vincentTradeKnown;
         private bool jazPartGot;
@@ -25,11 +18,11 @@ namespace Pathoschild.Stardew.TractorMod.Questable
             this.showNew.Value = true;
         }
 
-        private ScytheQuest(ScytheQuestState questState, bool jazTradeKnown, bool vincentTradeKnown, bool jazPartGot, bool vincentPartGot)
+        internal ScytheQuest(ScytheQuestState questState, bool jazTradeKnown, bool vincentTradeKnown, bool jazPartGot, bool vincentPartGot)
+            : base(questState)
         {
             this.questTitle = "Fix the harvester";
             this.questDescription = "I found the harvester attachment for the tractor, but won't work like it is now.  I should ask around town about it.";
-            this.investigationState = questState;
             this.jazPartGot = jazPartGot;
             this.vincentPartGot = vincentPartGot;
             this.jazTradeKnown = jazTradeKnown;
@@ -37,45 +30,24 @@ namespace Pathoschild.Stardew.TractorMod.Questable
             this.SetObjective();
         }
 
-        public static bool IsStarted => GetModConfig<ScytheQuestState>(ModDataKeys.ScytheQuestStatus) != ScytheQuestState.NotStarted;
-
-
-        public void ReadyToInstall()
+        public override void GotWorkingPart(Item workingPart)
         {
-            this.investigationState = ScytheQuestState.InstallPart;
-            this.SetObjective();
-        }
-
-        private static void Spout(NPC n, string message)
-        {
-            n.CurrentDialogue.Push(new Dialogue(n, null, message));
-            Game1.drawDialogue(n);
+            this.State = ScytheQuestState.InstallPart;
         }
 
         public override bool checkIfComplete(NPC? n, int number1, int number2, Item? item, string str, bool probe)
         {
             if (this.vincentTradeKnown && n?.Name == "Vincent")
             {
-                var crayfishStack = Game1.player.Items.FirstOrDefault(i => i.ItemId == "716" && i.stack.Value >= 3); // Crayfish
-                if (crayfishStack is not null)
+                if (this.TryTakeItemsFromPlayer("716", 3))
                 {
-                    if (crayfishStack.Stack == 3)
-                    {
-                        Game1.player.removeItemFromInventory(crayfishStack);
-                    }
-                    else
-                    {
-                        crayfishStack.Stack -= 3;
-                    }
-
-                    _ = Game1.player.addItemToInventory(new StardewValley.Object(ObjectIds.ScythePart1, 1));
-                    // TODO: if addItemToInventory fails, it returns the item.  Could make the item into loose litter in that case.
-
-                    Spout(n, "Ooh!  Oh these 3 crawdads would be great!  Thanks!  Here's your thingamajig.  Hope it works!$l#$b#Sure, I won't tell Mom that you gave them to me if you want...  Why?$s");
+                    this.AddItemToInventory(ObjectIds.ScythePart1);
+                    Spout(n, "Ooh!  Oh these 3 crawdads would be great!  Thanks!  Here's your thingamajig.  I Hope it works!$l#$b#Sure, I won't tell Mom that you gave them to me if you want...  Why?$s");
                     this.vincentPartGot = true;
                     this.SetObjective();
                     return false;
                 }
+                // else it'll fall into a case below where Vincent whines about the lack of bugs
             }
 
             if (this.jazTradeKnown && n?.Name == "Jas")
@@ -87,17 +59,9 @@ namespace Pathoschild.Stardew.TractorMod.Questable
                     var shinyThing = Game1.player.Items.FirstOrDefault(i => i?.ItemId == shinyItemId);
                     if (shinyThing is not null)
                     {
-                        if (shinyThing.Stack == 1)
-                        {
-                            Game1.player.removeItemFromInventory(shinyThing);
-                        }
-                        else
-                        {
-                            shinyThing.Stack -= 1;
-                        }
+                        _ = this.TryTakeItemsFromPlayer(shinyItemId, 1);
 
-                        _ = Game1.player.addItemToInventory(new StardewValley.Object(ObjectIds.ScythePart2, 1));
-                        // TODO: if addItemToInventory fails, it returns the item.  Could make the item into loose litter in that case.
+                        this.AddItemToInventory(ObjectIds.ScythePart2);
 
                         Spout(n, $"Ooh!  Oh this {shinyThing.DisplayName} is very sparkly!  Thanks!  Here's your thingamajig.  I sure hope it works!  I really want to ride on your tractor some day!$l");
                         this.jazPartGot = true;
@@ -105,8 +69,8 @@ namespace Pathoschild.Stardew.TractorMod.Questable
                         return false;
                     }
                 }
+                // else it'll fall into a case below where Jaz asks for shinies
             }
-
 
             if (item?.ItemId != ObjectIds.BustedScythe || n is null)
             {
@@ -139,7 +103,7 @@ namespace Pathoschild.Stardew.TractorMod.Questable
                     this.SetJazAndVincentFingered();
                     break;
                 case "Penny":
-                    if (this.investigationState == ScytheQuestState.NoCluesYet)
+                    if (this.State == ScytheQuestState.NoCluesYet)
                     {
                         Spout(n, "That's the old harvester for the tractor?  I guess it looks like that.");
                     }
@@ -150,7 +114,7 @@ namespace Pathoschild.Stardew.TractorMod.Questable
                     }
                     break;
                 case "Jodi":
-                    if (this.investigationState == ScytheQuestState.NoCluesYet)
+                    if (this.State == ScytheQuestState.NoCluesYet)
                     {
                         Spout(n, "What is that thing?  A harvester?  Sure, if you say so...  I tell you though, something about that thing seems familiar to me.$s#$b#Well, it looks like a mess, and I've cleaned up a lot messes.  It must be that!$l");
                     }
@@ -216,30 +180,23 @@ namespace Pathoschild.Stardew.TractorMod.Questable
 
         private void SetMissingPartsKnown()
         {
-            if (this.investigationState == ScytheQuestState.NoCluesYet)
+            if (this.State == ScytheQuestState.NoCluesYet)
             {
-                this.investigationState = ScytheQuestState.MissingParts;
+                this.State = ScytheQuestState.MissingParts;
                 this.SetObjective();
             }
         }
 
         private void SetJazAndVincentFingered()
         {
-            this.investigationState = ScytheQuestState.JazAndVincentFingered;
+            this.State = ScytheQuestState.JazAndVincentFingered;
             this.SetObjective();
         }
 
-        public void WorkingAttachmentBroughtToGarage()
-        {
-            this.questComplete();
-            Game1.player.modData[ModDataKeys.ScytheQuestStatus] = "Complete";
-            Game1.player.removeFirstOfThisItemFromInventory(ObjectIds.WorkingScythe);
-            Game1.DrawDialogue(new Dialogue(null, null, "Sweet!  You've now got a harvester attachment for your tractor!#$b#HINT: To use it, equip the scythe while on the tractor."));
-        }
 
-        private void SetObjective()
+        protected override void SetObjective()
         {
-            switch (this.investigationState)
+            switch (this.State)
             {
                 case ScytheQuestState.NoCluesYet:
                     this.currentObjective = "Ask the people in town about this thing.";
@@ -271,58 +228,7 @@ namespace Pathoschild.Stardew.TractorMod.Questable
             }
         }
 
-        public string Serialize()
-            => FormattableString.Invariant($"{this.investigationState},{this.jazTradeKnown},{this.vincentTradeKnown},{this.jazPartGot},{this.vincentPartGot}");
-
-        private static bool TryParseQuestStatus(string? s, out ScytheQuestState state, out bool[] flags)
-        {
-            if (s is null)
-            {
-                state = ScytheQuestState.NotStarted;
-                flags = new bool[0];
-                return true;
-            }
-
-            string[] splits = s.Split(',');
-            if (!Enum.TryParse<ScytheQuestState>(splits[0], out state) || (splits.Length != 1 && splits.Length != 5))
-            {
-                flags = new bool[0];
-                return false;
-            }
-
-            flags = new bool[splits.Length-1];
-            for (int i = 1; i < splits.Length; i++)
-            {
-                if (!bool.TryParse(splits[i], out flags[i-1]))
-                {
-                    return false;
-                }
-            }
-
-            return true;
-        }
-
-        internal static void OnDayStart(IModHelper helper, IMonitor monitor)
-        {
-            Game1.player.modData.TryGetValue(ModDataKeys.ScytheQuestStatus, out string? statusAsString);
-            if (!TryParseQuestStatus(statusAsString, out ScytheQuestState state, out bool[] flags))
-            {
-                monitor.Log($"Invalid value for {ModDataKeys.ScytheQuestStatus}: {statusAsString} -- reverting to NotStarted", LogLevel.Error);
-                state = ScytheQuestState.NotStarted;
-            }
-
-            if (state == ScytheQuestState.NotStarted)
-            {
-                var farm = Game1.getFarm();
-                AttachmentQuestBase.PlaceQuestItemUnderClump(monitor, ResourceClump.hollowLogIndex, ObjectIds.BustedScythe);
-            }
-
-            if (state != ScytheQuestState.NotStarted && state != ScytheQuestState.Complete)
-            {
-                var q = new ScytheQuest(state, flags[0], flags[1], flags[2], flags[3]);
-                q.MarkAsViewed();
-                Game1.player.questLog.Add(q);
-            }
-        }
+        public override string Serialize()
+            => FormattableString.Invariant($"{this.State},{this.jazTradeKnown},{this.vincentTradeKnown},{this.jazPartGot},{this.vincentPartGot}");
     }
 }

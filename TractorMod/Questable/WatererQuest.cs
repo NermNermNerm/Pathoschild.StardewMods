@@ -1,17 +1,11 @@
 using System;
 using System.Linq;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Microsoft.Xna.Framework;
-using StardewModdingAPI;
 using StardewValley;
-using StardewValley.Quests;
-using StardewValley.TerrainFeatures;
-using static Pathoschild.Stardew.TractorMod.Questable.QuestSetup;
 
 namespace Pathoschild.Stardew.TractorMod.Questable
 {
-    internal class WatererQuest
-        : Quest
+    public class WatererQuest
+        : BaseQuest<WatererQuestState>
     {
         private WatererQuestState investigationState;
 
@@ -24,25 +18,10 @@ namespace Pathoschild.Stardew.TractorMod.Questable
         }
 
         private WatererQuest(WatererQuestState questState)
+            : base(questState)
         {
             this.questTitle = "Fix the waterer";
             this.questDescription = "I found the watering attachment for the tractor, but it's in bad shape, I should ask around town.";
-            this.investigationState = questState;
-            this.SetObjective();
-        }
-
-        public static bool IsStarted => GetModConfig<WatererQuestState>(ModDataKeys.WateringQuestStatus) != WatererQuestState.NotStarted;
-
-        public void ReadyToInstall()
-        {
-            this.investigationState = WatererQuestState.InstallPart;
-            this.SetObjective();
-        }
-
-        private static void Spout(NPC n, string message)
-        {
-            n.CurrentDialogue.Push(new Dialogue(n, null, message));
-            Game1.drawDialogue(n);
         }
 
         private bool pesteredMaruToday = false;
@@ -87,6 +66,7 @@ namespace Pathoschild.Stardew.TractorMod.Questable
                     this.investigationState = WatererQuestState.MaruFingered;
                     this.SetObjective();
                     Game1.player.changeFriendship(-60, n);
+                    n.doEmote(12); // grumpy
                 }
             }
             else if (n?.Name == "Robin")
@@ -99,6 +79,7 @@ namespace Pathoschild.Stardew.TractorMod.Questable
                         this.investigationState = WatererQuestState.MaruFingered;
                         this.SetObjective();
                         Game1.player.changeFriendship(60, n);
+                        n.doEmote(32); // smily
                     }
                 }
                 return false;
@@ -115,27 +96,17 @@ namespace Pathoschild.Stardew.TractorMod.Questable
                         this.SetObjective();
                         break;
                     case WatererQuestState.GetGoldBars:
-                        var goldStack = Game1.player.Items.FirstOrDefault(i => i.ItemId == "336" && i.stack.Value >= goldBarCount); // Gold bar
-                        if (goldStack is not null)
+                        if (this.TryTakeItemsFromPlayer("336", goldBarCount)) //336=gold bar
                         {
-                            if (goldStack.Stack == 10)
-                            {
-                                Game1.player.removeItemFromInventory(goldStack);
-                            }
-                            else
-                            {
-                                goldStack.Stack -= 10;
-                            }
-
-                            Game1.player.removeItemFromInventory(item);
-
                             Spout(n, "Alrighty, I'll get to work on it and have it back to you in a couple days.  I'll just drop it in the mail for you.");
                             this.investigationState = WatererQuestState.WaitForMaruDay1;
                             this.SetObjective();
                             return false;
                         }
-
-                        Spout(n, "Have you found some gold bars yet?  Gotta go pretty deep in the mines to get it, but I'm sure you're up for it.");
+                        else
+                        {
+                            Spout(n, "Have you found some gold bars yet?  Gotta go pretty deep in the mines to get it, but I'm sure you're up for it.");
+                        }
                         break;
                 }
             }
@@ -143,15 +114,7 @@ namespace Pathoschild.Stardew.TractorMod.Questable
             return false;
         }
 
-        public void WorkingAttachmentBroughtToGarage()
-        {
-            this.questComplete();
-            Game1.player.modData[ModDataKeys.WateringQuestStatus] = "Complete";
-            Game1.player.removeFirstOfThisItemFromInventory(ObjectIds.WorkingWaterer);
-            Game1.DrawDialogue(new Dialogue(null, null, "Awesome!  You've now got a way to water your crops with your tractor!#$b#HINT: To use it, equip the watering can while on the tractor."));
-        }
-
-        private void SetObjective()
+        protected override void SetObjective()
         {
             switch (this.investigationState)
             {
@@ -177,56 +140,19 @@ namespace Pathoschild.Stardew.TractorMod.Questable
             }
         }
 
-        public string Serialize() => this.investigationState.ToString();
-
-        private static bool TryParseQuestStatus(string? s, out WatererQuestState state)
+        public override void AdvanceStateForDayPassing()
         {
-            if (s is null)
+            if (this.State == WatererQuestState.WaitForMaruDay1)
             {
-                state = WatererQuestState.NotStarted;
-                return true;
-            }
-
-            return Enum.TryParse<WatererQuestState>(s, out state);
-        }
-
-        public static float chanceOfCatchingQuestItem = 0;
-
-        internal static void OnDayStart(IModHelper helper, IMonitor monitor)
-        {
-            Game1.player.modData.TryGetValue(ModDataKeys.WateringQuestStatus, out string? statusAsString);
-            if (!TryParseQuestStatus(statusAsString, out WatererQuestState state))
-            {
-                monitor.Log($"Invalid value for {ModDataKeys.ScytheQuestStatus}: {statusAsString} -- reverting to NotStarted", LogLevel.Error);
-                state = WatererQuestState.NotStarted;
-            }
-
-            chanceOfCatchingQuestItem = 0;
-            if (state != WatererQuestState.NotStarted)
-            {
-                chanceOfCatchingQuestItem = 0; // No chance - already pulled it up.
-            }
-            else if (RestoreTractorQuest.IsTractorUnlocked)
-            {
-                chanceOfCatchingQuestItem = 0.01f + Game1.Date.TotalDays / 200f;
-            }
-            else
-            {
-                chanceOfCatchingQuestItem = .01f;
-            }
-
-            if (state == WatererQuestState.WaitForMaruDay1)
-            {
-                state = WatererQuestState.WaitForMaruDay2;
+                this.State = WatererQuestState.WaitForMaruDay2;
                 Game1.player.mailForTomorrow.Add(MailKeys.WatererRepaired);
             }
+        }
 
-            if (state != WatererQuestState.NotStarted && state != WatererQuestState.Complete)
-            {
-                var q = new WatererQuest(state);
-                q.MarkAsViewed();
-                Game1.player.questLog.Add(q);
-            }
+        public override void GotWorkingPart(Item workingPart)
+        {
+            Spout("Maru came through!  Time to take it to the garage and water some crops!");
+            this.State = WatererQuestState.InstallPart;
         }
     }
 }

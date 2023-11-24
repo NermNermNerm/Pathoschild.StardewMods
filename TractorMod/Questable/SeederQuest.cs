@@ -11,9 +11,9 @@ using static Pathoschild.Stardew.TractorMod.Questable.QuestSetup;
 namespace Pathoschild.Stardew.TractorMod.Questable
 {
     internal class SeederQuest
-        : Quest
+        : BaseQuest<SeederQuestState>
     {
-        private const int georgeSendsCanHeartLevel = 3;
+        public const int GeorgeSendsBrokenPartHeartLevel = 3;
         private const int evelynWillingToHelpLevel = 3;
         private const int alexWillingToHelpLevel = 2;
 
@@ -61,32 +61,17 @@ namespace Pathoschild.Stardew.TractorMod.Questable
         private const int ironBarCount = 10;
 
         public SeederQuest()
-            : this(SeederQuestState.GotPart)
-        {
-            this.showNew.Value = true;
-        }
-
-        private SeederQuest(SeederQuestState questState)
+            : base(SeederQuestState.GotPart)
         {
             this.questTitle = "Fix the seeder";
             this.questDescription = "Turns out George had the seeder attachment, maybe he can be talked into fixing it.";
-            this.state = questState;
-            this.SetObjective();
         }
-
-        public static bool IsStarted => GetModConfig<SeederQuestState>(ModDataKeys.SeederQuestStatus) != SeederQuestState.NotStarted;
 
 
         public void ReadyToInstall()
         {
             this.state = SeederQuestState.InstallPart;
             this.SetObjective();
-        }
-
-        private static void Spout(NPC n, string message)
-        {
-            n.CurrentDialogue.Push(new Dialogue(n, null, message));
-            Game1.drawDialogue(n);
         }
 
         private bool pesteredGeorgeToday = false;
@@ -103,7 +88,6 @@ namespace Pathoschild.Stardew.TractorMod.Questable
                 Game1.player.changeFriendship(-120, n);
                 n.doEmote(12); // Grumpiness emote
                 this.pesteredGeorgeToday = true;
-                this.SetObjective();
             }
             else if (n?.Name == "Maru" && item?.ItemId == ObjectIds.BustedSeeder)
             {
@@ -111,7 +95,7 @@ namespace Pathoschild.Stardew.TractorMod.Questable
             }
             else if (n?.Name == "Lewis" && this.state == SeederQuestState.GotPart && (item is null || item.ItemId == ObjectIds.BustedSeeder))
             {
-                Spout(n, "Oh dear oh dear oh dear...$2#$b#Hm...$2#$b#George isn't altogether wrong here.  Physically, he's not in good shape.  Mentally, though, he's still as sharp as ever.  Alas, not like your Grandpa, towards the end.$s#$b#But if he can somehow do this, or at least help in doing it, it'll do him so much good.#$b#We're gonna need some help here...  What we need is Evelyn, and in particular, YOU have to get her to cajole George into trying this.  I can't be seen to be involved for, err...  reasons.#$b#You need to build some trust with her before you broach the topic, however.  Tread carefully.");
+                Spout(n, "Oh dear oh dear oh dear...$2#$b#Hm...$2#$b#George isn't wrong -- physically, he's just not in good shape.  Mentally, though, he's still as sharp as ever.  Alas, not like your Grandpa, towards the end.$s#$b#But if he can somehow do this, or at least help in doing it, it'll do him so much good.#$b#We need some help here...  We need Evelyn, and YOU have to get her to cajole George into trying this.  I can't be seen to be involved for, err...  reasons.#$b#You need to build some trust with her before you broach the topic, however.  Tread carefully.");
                 this.state = SeederQuestState.GetEvelynOnSide;
                 this.SetObjective();
             }
@@ -174,20 +158,8 @@ namespace Pathoschild.Stardew.TractorMod.Questable
             }
             else if (n?.Name == "Alex" && this.state == SeederQuestState.GiveAlexStuff && (item is null || item.ItemId == ObjectIds.BustedSeeder))
             {
-                var ironStack = Game1.player.Items.FirstOrDefault(i => i?.ItemId == "335" && i.stack.Value >= ironBarCount);
-                var seederStack = Game1.player.Items.FirstOrDefault(i => i?.ItemId == ObjectIds.BustedSeeder);
-                if (ironStack is not null && seederStack is not null)
+                if (this.TryTakeItemsFromPlayer("335", ironBarCount, ObjectIds.BustedSeeder, 1))
                 {
-                    if (ironStack.Stack == ironBarCount)
-                    {
-                        Game1.player.removeItemFromInventory(ironStack);
-                    }
-                    else
-                    {
-                        ironStack.Stack -= ironBarCount;
-                    }
-
-                    Game1.player.removeItemFromInventory(seederStack);
                     this.state = SeederQuestState.WaitForAlexDay1;
                     Spout(n, "Thanks, that's all the stuff.  Well, I'm off the the garage with Gramps.  I'll send mail or something after we get it working.");
                 }
@@ -199,7 +171,7 @@ namespace Pathoschild.Stardew.TractorMod.Questable
             else if (n?.Name == "George" && this.state == SeederQuestState.GetPartFromGeorge && item is null)
             {
                 Game1.player.addItemToInventory(new StardewValley.Object(ObjectIds.WorkingSeeder, 1));
-                Spout(n, "There you go.  Fixed it myself.  Alex helped a little; he's a good kid.#$b#The seeder is as good as new.  Don't try and sprinkle chicken manure with the thing.  I don't want to see this thing back here again.");
+                Spout(n, "There you go.  Fixed it myself.  Alex didn't screw it up too much; he's a good kid.#$b#Don't try and sprinkle chicken manure with the thing.  I don't want to see this thing back here again.");
                 Game1.player.changeFriendship(240, n);
                 n.doEmote(20); //hearts
                 var evelyn = Game1.getCharacterFromName("Evelyn");
@@ -218,15 +190,7 @@ namespace Pathoschild.Stardew.TractorMod.Questable
             return false;
         }
 
-        public void WorkingAttachmentBroughtToGarage()
-        {
-            this.questComplete();
-            Game1.player.modData[ModDataKeys.SeederQuestStatus] = "Complete";
-            Game1.player.removeFirstOfThisItemFromInventory(ObjectIds.WorkingSeeder);
-            Game1.DrawDialogue(new Dialogue(null, null, "Awesome!  You've now got a way to plant and fertilize crops with your tractor!#$b#HINT: To use it, equip seeds or fertilizers while on the tractor."));
-        }
-
-        private void SetObjective()
+        protected override void SetObjective()
         {
             switch (this.state)
             {
@@ -267,58 +231,30 @@ namespace Pathoschild.Stardew.TractorMod.Questable
             }
         }
 
-        public string Serialize() => this.state.ToString();
-
-        private static bool TryParseQuestStatus(string? s, out SeederQuestState state)
+        public override void AdvanceStateForDayPassing()
         {
-            if (s is null)
+            if (this.State == SeederQuestState.WaitForEvelyn)
             {
-                state = SeederQuestState.NotStarted;
-                return true;
+                this.State = SeederQuestState.TalkToAlex1;
             }
-
-            return Enum.TryParse(s, out state);
-        }
-
-        internal static void OnDayStart(ModEntry mod)
-        {
-            if (Game1.player.getFriendshipHeartLevelForNPC("George") >= georgeSendsCanHeartLevel && RestoreTractorQuest.IsTractorUnlocked && !Game1.player.modData.ContainsKey(ModDataKeys.SeederQuestGeorgeSentMail))
+            else if (this.State == SeederQuestState.WaitForHaleyDay1)
             {
-                Game1.player.mailbox.Add(MailKeys.GeorgeSeederMail);
-                Game1.player.modData[ModDataKeys.SeederQuestGeorgeSentMail] = "sent";
+                this.State = SeederQuestState.TalkToAlex2;
             }
-
-            Game1.player.modData.TryGetValue(ModDataKeys.SeederQuestStatus, out string? statusAsString);
-            if (!TryParseQuestStatus(statusAsString, out SeederQuestState state))
+            else if (this.State == SeederQuestState.WaitForAlexDay1)
             {
-                mod.Monitor.Log($"Invalid value for {ModDataKeys.SeederQuestStatus}: {statusAsString} -- reverting to NotStarted", LogLevel.Error);
-                state = SeederQuestState.NotStarted;
-            }
-
-            if (state == SeederQuestState.WaitForEvelyn)
-            {
-                state = SeederQuestState.TalkToAlex1;
-            }
-            else if (state == SeederQuestState.WaitForHaleyDay1)
-            {
-                state = SeederQuestState.TalkToAlex2;
-            }
-            else if (state == SeederQuestState.WaitForAlexDay1)
-            {
-                state = SeederQuestState.WaitForAlexDay2;
+                this.State = SeederQuestState.WaitForAlexDay2;
                 Game1.player.mailForTomorrow.Add(MailKeys.AlexThankYouMail);
             }
-            else if (state == SeederQuestState.WaitForAlexDay2)
+            else if (this.State == SeederQuestState.WaitForAlexDay2)
             {
-                state = SeederQuestState.GetPartFromGeorge;
+                this.State = SeederQuestState.GetPartFromGeorge;
             }
+        }
 
-            if (state != SeederQuestState.NotStarted && state != SeederQuestState.Complete)
-            {
-                var q = new SeederQuest(state);
-                q.MarkAsViewed();
-                Game1.player.questLog.Add(q);
-            }
+        public override void GotWorkingPart(Item workingPart)
+        {
+            this.State = SeederQuestState.InstallPart;
         }
     }
 }

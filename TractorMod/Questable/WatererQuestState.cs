@@ -1,12 +1,6 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
 namespace Pathoschild.Stardew.TractorMod.Questable
 {
-    internal enum WatererQuestState
+    public enum WatererQuestState
     {
         NotStarted,
         NoCluesYet,
