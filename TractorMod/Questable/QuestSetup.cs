@@ -168,7 +168,6 @@ namespace Pathoschild.Stardew.TractorMod.Questable
             this.SetupMissingPartConversations();
         }
 
-
         private void SetupMissingPartConversations()
         {
             // Our stuff recurs every week for 4 days out of the week.  Delay until after the
@@ -378,92 +377,7 @@ namespace Pathoschild.Stardew.TractorMod.Questable
             {
                 e.Edit(editor =>
                 {
-                    IDictionary<string, ObjectData> objects = editor.AsDictionary<string, ObjectData>().Data;
-                    void addQuestItem(string id, string displayName, string description, int spriteIndex)
-                    {
-                        objects[id] = new()
-                        {
-                            Name = id,
-                            DisplayName = displayName,
-                            Description = description,
-                            Type = "Litter",
-                            Category = -999,
-                            Price = 0,
-                            Texture = "Mods/PathosChild.TractorMod/QuestSprites",
-                            SpriteIndex = spriteIndex,
-                            ContextTags = new() { "not_giftable", "not_placeable", "prevent_loss_on_death" },
-                        };
-                    };
-                    addQuestItem(
-                        ObjectIds.BustedEngine,
-                        "funky looking engine that doesn't work", // TODO: 18n
-                        "Sebastian pulled this off of the rusty tractor.  I need to find someone to fix it.", // TODO: 18n
-                        0);
-                    addQuestItem(
-                        ObjectIds.WorkingEngine,
-                        "working Junimo-powered engine", // TODO: 18n
-                        "The engine for the tractor!  I need to find someone to install it.", // TODO: 18n
-                        1);
-                    addQuestItem(
-                        ObjectIds.BustedScythe,
-                        "nonfunctional harvesting attachment for the tractor", // TODO: 18n
-                        "This looks like it was a tractor attachment for harvesting crops, but it doesn't seem to be all together.", // TODO: 18n
-                        2);
-                    addQuestItem(
-                        ObjectIds.WorkingScythe,
-                        "harvesting attachment for the tractor", // TODO: 18n
-                        "Just need to bring this to the tractor garage to be able to use it with the tractor!", // TODO: 18n
-                        3);
-                    addQuestItem(
-                        ObjectIds.ScythePart1,
-                        "crop shakerlooser", // TODO: 18n
-                        "One of the missing parts for the scythe attachment", // TODO: 18n
-                        4);
-                    addQuestItem(
-                        ObjectIds.ScythePart2,
-                        "fruity grabengetter", // TODO: 18n
-                        "One of the missing parts for the scythe attachment", // TODO: 18n
-                        5);
-                    addQuestItem(
-                        ObjectIds.BustedWaterer,
-                        "broken watering attachment for the tractor", // TODO: 18n
-                        "This looks like it was a tractor attachment for watering crops.  Sure hope somebody can help me get it working again, watering can really be a drag.", // TODO: 18n
-                        6);
-                    addQuestItem(
-                        ObjectIds.WorkingWaterer,
-                        "watering attachment for the tractor", // TODO: 18n
-                        "xx", // TODO: 18n
-                        7);
-                    addQuestItem(
-                        ObjectIds.BustedLoader,
-                        "bent up and rusty front-end loader for the tractor", // TODO: 18n
-                        "This was the front-end loader attachment (for picking up rocks and sticks), but it's all bent up and rusted through in spots.  It needs to be fixed to be usable.", // TODO: 18n
-                        8);
-                    addQuestItem(
-                        ObjectIds.WorkingLoader,
-                        "front-end loader attachment for my tractor", // TODO: 18n
-                        "This will allow me to clear rocks and sticks on my farm.  It needs to go into the tractor garage so I can use it.", // TODO: 18n
-                        9);
-                    addQuestItem(
-                        ObjectIds.AlexesOldShoe,
-                        "pair of rather nice shoes", // TODO: 18n
-                        "Shoes that Alex threw away, certified 14EEE!", // TODO: 18n
-                        10);
-                    addQuestItem(
-                        ObjectIds.DyedShoe,
-                        "cleverly repackaged pair of shoes", // TODO: 18n
-                        "Alex's old shoes, cleverly dyed.  Nobody will ever know.", // TODO: 18n
-                        11);
-                    addQuestItem(
-                        ObjectIds.BustedSeeder,
-                        "broken fertilizer and seed Seeder.", // TODO: 18n
-                        "The old fertilizer and seed spread for the old tractor.  Needs a good bit of fiddling to make work.", // TODO: 18n
-                        12);
-                    addQuestItem(
-                        ObjectIds.WorkingSeeder,
-                        "fertilizer and seed Seeder attachment for the tractor.", // TODO: 18n
-                        "Just needs to be brought back to the garage to use it on the tractor.", // TODO: 18n
-                        13);
+                    ObjectIds.EditAssets(editor.AsDictionary<string, ObjectData>().Data);
                 });
             }
             else if (e.NameWithoutLocale.IsEquivalentTo("Data/CraftingRecipes"))
@@ -478,174 +392,15 @@ namespace Pathoschild.Stardew.TractorMod.Questable
             {
                 e.Edit(editor =>
                 {
-                    var mailItems = editor.AsDictionary<string, string>().Data;
-                    // TODO: i18n
-                    mailItems[MailKeys.BuildTheGarage] = "Hey there!^I talked with Sebastian about your tractor and he has agreed to work on it, but only if he's got a decent place to work.  I understand that you're just starting out here and don't have a lot of money laying around, so I'm willing to do it at-cost, providing you can come up with the materials.  Come by my shop for a full list of materials.  See you soon!^  - Robin";
-                    mailItems[MailKeys.FixTheEngine] = "I got everything working except this engine.  I've never seen anything like it.  I mean, it's like it doesn't even need gas!^I don't know what you're gonna need to do to make it work, but I know I'm out of my area here.^If you manage to figure it out, bring it back up to my place and I'll see about getting it installed.^  - Sebastian"
-                                                      + $"%item object {ObjectIds.BustedEngine} 1%%";
-                    mailItems[MailKeys.WatererRepaired] = "Thanks for letting me work on this!  I even let my Dad do some of the work on it so that he got to feel like maybe he finally did make good on his promise to your Granddad all those years ago.  But me, well, I just like gadgets!  If it ever breaks down, let me know, I have a 10-year warranty on all my work :)"
-                                                        + $"%item object {ObjectIds.WorkingWaterer} 1%%";
-                    mailItems[MailKeys.GeorgeSeederMail] = "I hear you're restoring that old tractor.  Here's the seeder - it spreads fertilizer and seeds.  Your Grandpa gave it to me to fix after he decided to try going organic and put chicken droppings in it. "
-                                                         + "I got it cleaned up, but it needed some iron bars.  Your Grandpa took his time rounding those up, and, well, my accident and his decline put an end to it.  But you're a young man, you can find somebody to fix it. "
-                                                         + "I'm too old to be of any use anymore."
-                                                         + $"%item object {ObjectIds.BustedSeeder} 1%%";
-                    mailItems[MailKeys.EvelynPointsToAlex] = "Hello Dear,^I gave what you said a lot of thought and I think I have a way.  George would be really uncomfortable with you doing work he would want to do.^But George has had to get used to letting Alex do a lot of things for him already, so it might be easier.^I talked to him already, but he seems uneasy about it.  Maybe someone nearer his own age who he trusted talked to him he would come around.^Good luck!^ - Granny";
-                    mailItems[MailKeys.HaleysWorkIsDone] = "@ - I think you'll find Alex is a little more... inspired... today.^ - Haley";
-                    mailItems[MailKeys.AlexThankYouMail] = "Hey!^Grandpa and I got the seeder working last night!  You can pick it up from Grandpa whenever.  Now that it's done, I'm really happy you rooked me into doing this. "
-                                                         + "I really love my grandpa, and well, sometimes it's hard to find things to do together.  And hey, maybe if the Gridball thing doesn't work out I can get a job repairing "
-                                                         + "farm equipment!^ - Your friend,^   Alex";
+                    MailKeys.EditAssets(editor.AsDictionary<string, string>().Data);
                 });
             }
-            else if (e.NameWithoutLocale.IsEquivalentTo("Characters/Dialogue/Abigail"))
+            else if (e.NameWithoutLocale.StartsWith("Characters/Dialogue/"))
             {
                 e.Edit(editor =>
                 {
                     var topics = editor.AsDictionary<string, string>().Data;
-                    topics[ConversationKeys.TractorNotFound] = "Have you run across the old tractor yet?  It's off on the west side of the farm, in behind the some trees in an old lean-to.  It's just about one with the vegetation now, but it hasn't rusted away completely.  It sure would be fun to see it run!";
-                    topics[ConversationKeys.ScytheNotFound] = "You know I used to like to tromp around your old farm.  I loved the empty haunted feel to it...$2#$b#Anyway...  I saw some things that probably work with the tractor, over on the South side of your farm near Marnie's ranch.#$b#One of them is buried under and old log and one is wedged into a boulder.#$b#Hey, if you get them working, does this mean I can drive the tractor?$4";
-                    topics[ConversationKeys.LoaderNotFound] = "You know I used to like to tromp around your old farm.  I loved the empty haunted feel to it...$2#$b#Anyway...  I saw some things that probably work with the tractor, over on the South side of your farm near Marnie's ranch.#$b#One of them is buried under and old log and one is wedged into a boulder.#$b#Hey, if you get them working, does this mean I can drive the tractor?$4";
-                });
-            }
-            else if (e.NameWithoutLocale.IsEquivalentTo("Characters/Dialogue/Caroline"))
-            {
-                e.Edit(editor =>
-                {
-                    var topics = editor.AsDictionary<string, string>().Data;
-                });
-            }
-            else if (e.NameWithoutLocale.IsEquivalentTo("Characters/Dialogue/Demetrius"))
-            {
-                e.Edit(editor =>
-                {
-                    var topics = editor.AsDictionary<string, string>().Data;
-                    topics[ConversationKeys.TractorNotFound] = "Have you run across the old tractor yet?  I doubt it still works, but maybe it could be restored.";
-                });
-            }
-            else if (e.NameWithoutLocale.IsEquivalentTo("Characters/Dialogue/Dwarf"))
-            {
-                e.Edit(editor =>
-                {
-                    var topics = editor.AsDictionary<string, string>().Data;
-                    topics[ConversationKeys.DwarfShoesTaken] = "Hey I saw you take those shoes.  I would have charged gold for them if I thought anybody would be stupid enough to want them.#$b#They don't fit. That's why I chucked them over there.  I'm glad you hauled off that junk.";
-                });
-            }
-            else if (e.NameWithoutLocale.IsEquivalentTo("Characters/Dialogue/Evelyn"))
-            {
-                e.Edit(editor =>
-                {
-                    var topics = editor.AsDictionary<string, string>().Data;
-                    topics[ConversationKeys.LoaderNotFound]
-                     = topics[ConversationKeys.ScytheNotFound]
-                     = "You granddad... Bless his heart.  He loved that tractor of his, but you could never tell that judging by the dents and broken off parts!#$b#He left little bits of that thing scattered all over the farm, I'm afraid.  You'll probably come across bits of it here and there!";
-                });
-            }
-            else if (e.NameWithoutLocale.IsEquivalentTo("Characters/Dialogue/George"))
-            {
-                e.Edit(editor =>
-                {
-                    var topics = editor.AsDictionary<string, string>().Data;
-                    topics[ConversationKeys.TractorNotFound + "2"] = "Have you run across the old tractor yet?  Your Grandpa kept it stored in a lean to out on the West side.#$b#It was a piece of junk when he bought it.  No idea how he kept it running.  He had no mechanical ability at all.  None.";
-                });
-            }
-            else if (e.NameWithoutLocale.IsEquivalentTo("Characters/Dialogue/Gus"))
-            {
-                e.Edit(editor =>
-                {
-                    var topics = editor.AsDictionary<string, string>().Data;
-                    topics[ConversationKeys.WatererNotFound] = "I hear you found that old tractor - you should get Robin to tell you the tale of the irrigator.";
-                    topics[ConversationKeys.SeederNotFound] = "You know your Grandad and George were really good friends; it hit George pretty hard when your Granddad passed.$2#$b#You might do well to be nice to George, he might know a few secrets about your farm.";
-                });
-            }
-            else if (e.NameWithoutLocale.IsEquivalentTo("Characters/Dialogue/Emily"))
-            {
-                e.Edit(editor =>
-                {
-                    var topics = editor.AsDictionary<string, string>().Data;
-                    topics[ConversationKeys.SeederNotFound] = "You know your Grandad and George were really good friends; it hit George pretty hard when your Granddad passed.$2#$b#You might do well to be nice to George, he might know a few secrets about your farm.";
-
-                    // Just a little color to go with the shoes quest...  I picked this day to replace because the existing dialog is pretty weak.
-                    topics["winter_Sun"] = "I saw in one of Haley's magazines where it says that women unconsciously rate men based on their shoes...#$b#Hah!  I must be doing it wrong then.  If I ever did look at a man's shoes and I saw scuffed up old work boots, I'd be more attracted to him, not less!";
-                });
-            }
-            else if (e.NameWithoutLocale.IsEquivalentTo("Characters/Dialogue/Jaz")
-                  || e.NameWithoutLocale.IsEquivalentTo("Characters/Dialogue/Vincent"))
-            {
-                e.Edit(editor =>
-                {
-                    var topics = editor.AsDictionary<string, string>().Data;
-                    topics[ConversationKeys.ScytheNotFound]
-                      = topics[ConversationKeys.LoaderNotFound + "2"]
-                      = "Hey, wanna know a secret about your farm?  Down in the brambles near Marnie's house, there's Greebles.  They've made some wierd machines too.$3#$b#No...  I've never seen a Greeble, but cats can!";
-                });
-            }
-            else if (e.NameWithoutLocale.IsEquivalentTo("Characters/Dialogue/Jodi"))
-            {
-                e.Edit(editor =>
-                {
-                    var topics = editor.AsDictionary<string, string>().Data;
-                    topics[ConversationKeys.LoaderNotFound]
-                     = topics[ConversationKeys.ScytheNotFound]
-                     = "The kids used to play out in the south field near Marnie's house.  They often came home with tales of high adventure!$1#$b#You might poke around down there sometime when you need a break, who knows what you'll find!";
-                    topics[ConversationKeys.SeederNotFound] = "You know your Grandad and George were really good friends; it hit George pretty hard when your Granddad passed.$2#$b#You might do well to be nice to George, he might know a few secrets about your farm.";
-                });
-            }
-            else if (e.NameWithoutLocale.IsEquivalentTo("Characters/Dialogue/Lewis"))
-            {
-                e.Edit(editor =>
-                {
-                    var topics = editor.AsDictionary<string, string>().Data;
-                    topics[ConversationKeys.WatererNotFound] = "I hear you found that old tractor - you should get Robin to tell you the tale of the irrigator.";
-                    topics[ConversationKeys.LoaderNotFound] = "One day your granddad came to ask me for help because he had wedged the front-end loader under a boulder he was moving on the south side of the farm.#$b#I told him that maybe his little tractor wasn't up to moving such a big rock...  He seemed to take that kinda personal; he did love that little tractor.$2#$b#But then his eyes lit up and he ran into Pierre's.$1#$b#I'm not sure what happened after that.";
-                    topics[ConversationKeys.SeederNotFound] = "You know your Grandad and George were really good friends; it hit George pretty hard when your Granddad passed.$2#$b#You might do well to be nice to George, he might know a few secrets about your farm.";
-                });
-            }
-            else if (e.NameWithoutLocale.IsEquivalentTo("Characters/Dialogue/Marnie"))
-            {
-                e.Edit(editor =>
-                {
-                    var topics = editor.AsDictionary<string, string>().Data;
-                    topics[ConversationKeys.LoaderNotFound]
-                     = topics[ConversationKeys.ScytheNotFound]
-                     = "You know the kids used to play at your farm.  I've asked them to stay clear now that you're back.#$b#It's hard enough to run a farm with chickens running around, let alone kids!$1#$b#Ask me how I know...$2";
-                    topics[ConversationKeys.SeederNotFound] = "You know your Grandad and George were really good friends; it hit George pretty hard when your Granddad passed.$2#$b#You might do well to be nice to George, he might know a few secrets about your farm.";
-                });
-            }
-            else if (e.NameWithoutLocale.IsEquivalentTo("Characters/Dialogue/Maru"))
-            {
-                e.Edit(editor =>
-                {
-                    var topics = editor.AsDictionary<string, string>().Data;
-                    topics[ConversationKeys.WatererNotFound] = "I hear you found the tractor!  Just a word of advice - might be best not to bring up the subject around my dad...$2#$b#It's a bit of a sore subject.#$b#You can talk to my Mom about it though - your only trouble will be getting her to stop!$1";
-                });
-            }
-            else if (e.NameWithoutLocale.IsEquivalentTo("Characters/Dialogue/Pierre"))
-            {
-                e.Edit(editor =>
-                {
-                    var topics = editor.AsDictionary<string, string>().Data;
-                    topics[ConversationKeys.TractorNotFound] = "Have you run across the old tractor yet?  If you could get it running, it'd sure help you get more crops in the ground.#$b#If you need help finding it, Abigail might know where it is.";
-                    topics[ConversationKeys.WatererNotFound] = "I hear you found that old tractor - I wonder where all the attachments are?  One that's not a mystery is the irrigation rig.#$b#That's somewhere at the bottom of the farm pond, along with a big chunk of Demetrius' pride!#1";
-                    topics[ConversationKeys.LoaderNotFound] = "Did you ever find the front-end loader?  One day your Granddad came running into the store, bought a whole bunch of bombs and ran back out again.#$b#Lewis tells me he wedged the loader under a big rock and was trying to get it out...  So if you do find it, it might be in pieces!#1#$b#I'm just glad your Granddad didn't end up in pieces.$2#$b#That's why I don't sell explosives anymore.$2";
-                });
-            }
-            else if (e.NameWithoutLocale.IsEquivalentTo("Characters/Dialogue/Robin"))
-            {
-                e.Edit(editor =>
-                {
-                    var topics = editor.AsDictionary<string, string>().Data;
-                    topics[ConversationKeys.TractorNotFound] = "Heh, have you run across the old tractor yet?  That thing has some stories to tell, let me tell you.  It might make a good decoration for your front yard someday.";
-                    topics[ConversationKeys.WatererNotFound] = "Oh you want to find the tractor's irrigator?  Ha!  Good luck with that!$b#$b#Who knows, maybe you can fish it out of there.$1#$b#Demetrius tried to winch it out and ended up, well, let's just say the creases on his trousers weren't quite as crisp as usual after that attempt!$1";
-                    topics[ConversationKeys.SeederNotFound] = "You know your Grandad and George were really good friends; it hit George pretty hard when your Granddad passed.$2#$b#You might do well to be nice to George, he might know a few secrets about your farm.";
-                });
-            }
-            else if (e.NameWithoutLocale.IsEquivalentTo("Characters/Dialogue/Willy"))
-            {
-                e.Edit(editor =>
-                {
-                    var topics = editor.AsDictionary<string, string>().Data;
-                    topics[ConversationKeys.TractorNotFound] = "Have you been out on the west side of your property yet?  Your Granddad had a tractor that he kept under a lean-to that always teetered on the brink of collapse.#$b#Know how he got it?  Me and Pappy boated it in from Knopperville.$l#$b#I didn't understand why he bought it -- the engine was had thrown a rod bent the crankshaft and cracked the case.$s#$b#But somehow he got it to live again!  Funny that.  He wasn't much of a mechanic...";
-                    topics[ConversationKeys.WatererNotFound] = "Ah, but yaknow, the biggest catch on your farm isn't the fish!  Nay laddy, it's the watering wagon for the tractor!$3#$b#That ol' thing sunk into the depths of the pond ne'er to be seen again!$1#$b#You'll probably lose a lure or two to it if you fish on your pond.$3";
-                    topics[ConversationKeys.SeederNotFound] = "You know your Grandad and George were really good friends; it hit George pretty hard when your Granddad passed.$2#$b#You might do well to be nice to George, he might know a few secrets about your farm.";
+                    ConversationKeys.EditAssets(e.NameWithoutLocale, topics);
                 });
             }
         }
