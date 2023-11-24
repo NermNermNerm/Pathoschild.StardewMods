@@ -53,7 +53,7 @@ namespace Pathoschild.Stardew.TractorMod.Questable
         {
             // Find a spot under a tree on the West side of the map
             var farm = Game1.getFarm();
-            foreach (var eastSideTree in farm.terrainFeatures.Values.OfType<Tree>().Where(t => t.growthStage == Tree.treeStage).OrderBy(tf => tf.Tile.X))
+            foreach (var eastSideTree in farm.terrainFeatures.Values.OfType<Tree>().Where(t => t.growthStage.Value == Tree.treeStage).OrderBy(tf => tf.Tile.X))
             {
                 bool anyCollisions = false;
                 List<Vector2> tilesToClear = new List<Vector2>();

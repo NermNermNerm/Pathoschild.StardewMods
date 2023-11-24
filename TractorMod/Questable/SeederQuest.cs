@@ -121,7 +121,7 @@ namespace Pathoschild.Stardew.TractorMod.Questable
                 {
                     Spout(n, "Ohhh...  I know George *could* repair that thing...  But he could also fail miserably, you see, it's not just his legs that have let him down.  Have you seen his hands, how they shake?  It's not so bad, but it really frustrates him.#$b#Oh deary, I'm old too...  I need time to think about this.");
                     this.pesteredEvelynToday = true;
-                    Game1.player.mailForTomorrow.Add(QuestSetup.MailKeys.EvelynPointsToAlex);
+                    Game1.player.mailForTomorrow.Add(MailKeys.EvelynPointsToAlex);
                     this.state = SeederQuestState.WaitForEvelyn;
                     this.SetObjective();
                 }
@@ -164,7 +164,7 @@ namespace Pathoschild.Stardew.TractorMod.Questable
                 this.state = SeederQuestState.WaitForHaleyDay1;
                 this.SetObjective();
                 this.pesteredHaleyToday = true;
-                Game1.player.mailForTomorrow.Add(QuestSetup.MailKeys.HaleysWorkIsDone);
+                Game1.player.mailForTomorrow.Add(MailKeys.HaleysWorkIsDone);
             }
             else if (n?.Name == "Alex" && this.state == SeederQuestState.TalkToAlex2 && (item is null || item.ItemId == ObjectIds.BustedSeeder))
             {
@@ -175,7 +175,7 @@ namespace Pathoschild.Stardew.TractorMod.Questable
             else if (n?.Name == "Alex" && this.state == SeederQuestState.GiveAlexStuff && (item is null || item.ItemId == ObjectIds.BustedSeeder))
             {
                 var ironStack = Game1.player.Items.FirstOrDefault(i => i?.ItemId == "335" && i.stack.Value >= ironBarCount);
-                var seederStack = Game1.player.Items.FirstOrDefault(i => i?.ItemId == QuestSetup.ObjectIds.BustedSeeder);
+                var seederStack = Game1.player.Items.FirstOrDefault(i => i?.ItemId == ObjectIds.BustedSeeder);
                 if (ironStack is not null && seederStack is not null)
                 {
                     if (ironStack.Stack == ironBarCount)
@@ -198,7 +198,7 @@ namespace Pathoschild.Stardew.TractorMod.Questable
             }
             else if (n?.Name == "George" && this.state == SeederQuestState.GetPartFromGeorge && item is null)
             {
-                Game1.player.addItemToInventory(new StardewValley.Object(QuestSetup.ObjectIds.WorkingSeeder, 1));
+                Game1.player.addItemToInventory(new StardewValley.Object(ObjectIds.WorkingSeeder, 1));
                 Spout(n, "There you go.  Fixed it myself.  Alex helped a little; he's a good kid.#$b#The seeder is as good as new.  Don't try and sprinkle chicken manure with the thing.  I don't want to see this thing back here again.");
                 Game1.player.changeFriendship(240, n);
                 n.doEmote(20); //hearts
@@ -221,7 +221,7 @@ namespace Pathoschild.Stardew.TractorMod.Questable
         public void WorkingAttachmentBroughtToGarage()
         {
             this.questComplete();
-            Game1.player.modData[QuestSetup.ModDataKeys.SeederQuestStatus] = "Complete";
+            Game1.player.modData[ModDataKeys.SeederQuestStatus] = "Complete";
             Game1.player.removeFirstOfThisItemFromInventory(ObjectIds.WorkingSeeder);
             Game1.DrawDialogue(new Dialogue(null, null, "Awesome!  You've now got a way to plant and fertilize crops with your tractor!#$b#HINT: To use it, equip seeds or fertilizers while on the tractor."));
         }
@@ -282,10 +282,10 @@ namespace Pathoschild.Stardew.TractorMod.Questable
 
         internal static void OnDayStart(ModEntry mod)
         {
-            if (Game1.player.getFriendshipHeartLevelForNPC("George") >= georgeSendsCanHeartLevel && RestoreTractorQuest.IsTractorUnlocked && !Game1.player.modData.ContainsKey(QuestSetup.ModDataKeys.SeederQuestGeorgeSentMail))
+            if (Game1.player.getFriendshipHeartLevelForNPC("George") >= georgeSendsCanHeartLevel && RestoreTractorQuest.IsTractorUnlocked && !Game1.player.modData.ContainsKey(ModDataKeys.SeederQuestGeorgeSentMail))
             {
-                Game1.player.mailbox.Add(QuestSetup.MailKeys.GeorgeSeederMail);
-                Game1.player.modData[QuestSetup.ModDataKeys.SeederQuestGeorgeSentMail] = "sent";
+                Game1.player.mailbox.Add(MailKeys.GeorgeSeederMail);
+                Game1.player.modData[ModDataKeys.SeederQuestGeorgeSentMail] = "sent";
             }
 
             Game1.player.modData.TryGetValue(ModDataKeys.SeederQuestStatus, out string? statusAsString);
@@ -306,7 +306,7 @@ namespace Pathoschild.Stardew.TractorMod.Questable
             else if (state == SeederQuestState.WaitForAlexDay1)
             {
                 state = SeederQuestState.WaitForAlexDay2;
-                Game1.player.mailForTomorrow.Add(QuestSetup.MailKeys.AlexThankYouMail);
+                Game1.player.mailForTomorrow.Add(MailKeys.AlexThankYouMail);
             }
             else if (state == SeederQuestState.WaitForAlexDay2)
             {

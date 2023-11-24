@@ -27,59 +27,6 @@ namespace Pathoschild.Stardew.TractorMod.Questable
 
         private ModEntry mod;
 
-
-        public static class ObjectIds
-        {
-            public const string BustedEngine = "Pathoschild.TractorMod_BustedEngine";
-            public const string WorkingEngine = "Pathoschild.TractorMod_WorkingEngine";
-            public const string BustedLoader = "Pathoschild.TractorMod_BustedLoader";
-            public const string WorkingLoader = "Pathoschild.TractorMod_WorkingLoader";
-            public const string BustedScythe = "Pathoschild.TractorMod_BustedScythe";
-            public const string WorkingScythe = "Pathoschild.TractorMod_WorkingScythe";
-            public const string ScythePart1 = "Pathoschild.TractorMod_ScythePart1";
-            public const string ScythePart2 = "Pathoschild.TractorMod_ScythePart2";
-            public const string AlexesOldShoe = "Pathoschild.TractorMod_AlexesShoe";
-            public const string DyedShoe = "Pathoschild.TractorMod_DyedShoe";
-            public const string BustedWaterer = "Pathoschild.TractorMod_BustedWaterer";
-            public const string WorkingWaterer = "Pathoschild.TractorMod_WorkingWaterer";
-            public const string BustedSeeder = "Pathoschild.TractorMod_BustedSeeder";
-            public const string WorkingSeeder = "Pathoschild.TractorMod_WorkingSeeder";
-        }
-
-        public static class MailKeys
-        {
-            public const string BuildTheGarage = "QuestableTractorMod.BuildTheGarage";
-            public const string FixTheEngine = "QuestableTractorMod.FixTheEngine";
-            public const string WatererRepaired = "QuestableTractorMod.FixTheEngine";
-            public const string GeorgeSeederMail = "QuestableTractorMod.GeorgeSeederMail";
-            public const string EvelynPointsToAlex = "QuestableTractorMod.EvelynPointsToAlex";
-            public const string HaleysWorkIsDone = "QuestableTractorMod.HaleysWorkIsDone";
-            public const string AlexThankYouMail = "QuestableTractorMod.AlexThankYouMail";
-        };
-
-        public static class ModDataKeys
-        {
-            public const string MainQuestStatus = "QuestableTractorMod.MainQuestStatus";
-            public const string DerelictPosition = "QuestableTractorMod.DerelictPosition";
-            public const string AxeAndPickQuestStatus = "QuestableTractorMod.AxeAndPickQuestStatus";
-            public const string ScytheQuestStatus = "QuestableTractorMod.ScytheQuestStatus";
-            public const string WateringQuestStatus = "QuestableTractorMod.WateringQuestStatus";
-            public const string SpreadingQuestStatus = "QuestableTractorMod.SpreadingQuestStatus";
-            public const string SeederQuestStatus = "QuestableTractorMod.SeederQuestStatus";
-            public const string SeederQuestGeorgeSentMail = "QuestableTractorMod.SeederQuestGeorgeSentMail";
-        };
-
-        public static class ConversationKeys
-        {
-            public const string TractorNotFound = "tractor_not_found";
-            public const string LoaderNotFound = "loader_not_found";
-            public const string ScytheNotFound = "scythe_not_found";
-            public const string SeederNotFound = "seeder_not_found";
-            public const string WatererNotFound = "waterer_not_found";
-
-            public const string DwarfShoesTaken = "dwarf_shoes_taken";
-        }
-
         private IModHelper Helper => this.mod.Helper;
         private IMonitor Monitor => this.mod.Monitor;
 
@@ -100,7 +47,7 @@ namespace Pathoschild.Stardew.TractorMod.Questable
         {
             if (Game1.random.NextDouble() < WatererQuest.chanceOfCatchingQuestItem)
             {
-                __result = ItemRegistry.Create(QuestSetup.ObjectIds.BustedWaterer);
+                __result = ItemRegistry.Create(ObjectIds.BustedWaterer);
                 return false;
             }
             else

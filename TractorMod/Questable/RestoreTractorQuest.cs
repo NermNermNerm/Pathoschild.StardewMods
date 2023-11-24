@@ -31,12 +31,12 @@ namespace Pathoschild.Stardew.TractorMod.Questable
 
         public static bool IsTractorUnlocked
         {
-            get => QuestSetup.GetModConfig<RestorationState>(QuestSetup.ModDataKeys.MainQuestStatus) == RestorationState.Complete;
+            get => QuestSetup.GetModConfig<RestorationState>(ModDataKeys.MainQuestStatus) == RestorationState.Complete;
         }
 
         public static bool IsStarted
         {
-            get => QuestSetup.GetModConfig<RestorationState>(QuestSetup.ModDataKeys.MainQuestStatus) != RestorationState.NotStarted;
+            get => QuestSetup.GetModConfig<RestorationState>(ModDataKeys.MainQuestStatus) != RestorationState.NotStarted;
         }
 
         private void SetState(RestorationState state)
@@ -104,7 +104,7 @@ namespace Pathoschild.Stardew.TractorMod.Questable
                     break;
                 case RestorationState.WaitingForMailFromRobinDay2:
                     restorationStatus = RestorationState.BuildTractorGarage;
-                    Game1.addMail(QuestSetup.MailKeys.BuildTheGarage);
+                    Game1.addMail(MailKeys.BuildTheGarage);
                     break;
                 case RestorationState.BuildTractorGarage:
                     if (garage is not null && !garage.isUnderConstruction())
@@ -116,7 +116,7 @@ namespace Pathoschild.Stardew.TractorMod.Questable
                     restorationStatus = RestorationState.WaitingForSebastianDay2;
                     break;
                 case RestorationState.WaitingForSebastianDay2:
-                    Game1.addMail(QuestSetup.MailKeys.FixTheEngine);
+                    Game1.addMail(MailKeys.FixTheEngine);
                     restorationStatus = RestorationState.TalkToWizard;
                     break;
                 case RestorationState.BringStuffToForest:
@@ -145,7 +145,7 @@ namespace Pathoschild.Stardew.TractorMod.Questable
                     {
                         hasSap = true;
                     }
-                    if (item.ItemId == QuestSetup.ObjectIds.BustedEngine)
+                    if (item.ItemId == ObjectIds.BustedEngine)
                     {
                         hasEngine = true;
                     }
@@ -175,10 +175,10 @@ namespace Pathoschild.Stardew.TractorMod.Questable
                     {
                         toRemove.Add(item); // Keeping it simple: If you give the Junimo's more than 20, that's like tipping them.
                     }
-                    if (item.ItemId == QuestSetup.ObjectIds.BustedEngine)
+                    if (item.ItemId == ObjectIds.BustedEngine)
                     {
                         toRemove.Add(item);
-                        toAdd.Add(new StardewValley.Object(QuestSetup.ObjectIds.WorkingEngine, 1));
+                        toAdd.Add(new StardewValley.Object(ObjectIds.WorkingEngine, 1));
                     }
                     if (item.ItemId == "770" && item.Stack >= 20)
                     {
@@ -202,12 +202,12 @@ namespace Pathoschild.Stardew.TractorMod.Questable
 
         public static void OnDayStart(IModHelper helper, IMonitor monitor, Stable? garage)
         {
-            if (!Game1.player.modData.TryGetValue(QuestSetup.ModDataKeys.MainQuestStatus, out string? statusAsString)
+            if (!Game1.player.modData.TryGetValue(ModDataKeys.MainQuestStatus, out string? statusAsString)
                 || !Enum.TryParse(statusAsString, true, out RestorationState mainQuestStatusAtDayStart))
             {
                 if (statusAsString is not null)
                 {
-                    monitor.Log($"Invalid value for {QuestSetup.ModDataKeys.MainQuestStatus}: {statusAsString} -- reverting to NotStarted", LogLevel.Error);
+                    monitor.Log($"Invalid value for {ModDataKeys.MainQuestStatus}: {statusAsString} -- reverting to NotStarted", LogLevel.Error);
                 }
                 mainQuestStatusAtDayStart = RestorationState.NotStarted;
             }
@@ -242,7 +242,7 @@ namespace Pathoschild.Stardew.TractorMod.Questable
                 var q = new RestoreTractorQuest(mainQuestStatus);
                 Game1.player.questLog.Add(q);
                 q.questComplete();
-                Game1.player.modData[QuestSetup.ModDataKeys.MainQuestStatus] = RestorationState.Complete.ToString();
+                Game1.player.modData[ModDataKeys.MainQuestStatus] = RestorationState.Complete.ToString();
             }
         }
 
@@ -286,38 +286,38 @@ namespace Pathoschild.Stardew.TractorMod.Questable
                 Game1.drawDialogue(n);
                 this.hasDoneStatusCheckToday = true;
             }
-            else if (n?.Name == "Wizard" && this.state == RestorationState.TalkToWizard && item?.ItemId == QuestSetup.ObjectIds.BustedEngine)
+            else if (n?.Name == "Wizard" && this.state == RestorationState.TalkToWizard && item?.ItemId == ObjectIds.BustedEngine)
             {
                 Spout(n, "Oh...  Now where did you get that??!$l#$b#Ooooh... Ah.  Yes.  I see...  Mmm...$s#$b#Yes.  Your grandfather dabbled a bit in Forest Magic.  He was nowhere near as adept a practitioner as myself, to be sure...#$b#When the mundane engine broke down and he couldn't afford to fix it, he enlisted some forest magic to make a new one.#$b#As you can see, the Junimos that he recruited to keep the motor running have gotten bored and wandered away.  You'll need to coax them back.$s#$b#Now, pay attention!  This will require your utmost concentration!$a#$b#You must place the engine, 20 sap, 20 mixed seeds, and an aquamarine in a chest in the secret woods in front of the statue...#$b#Then, you must run around the chest, six times, clockwise very, very quickly.  Overnight, your engine will be restored.#$b#Now GO!  I have concerns much greater than yours right now.$a");
                 this.SetState(RestorationState.BringStuffToForest);
             }
-            else if (n?.Name == "Sebastian" && item?.ItemId == QuestSetup.ObjectIds.BustedEngine)
+            else if (n?.Name == "Sebastian" && item?.ItemId == ObjectIds.BustedEngine)
             {
                 Spout(n, "That is the craziest engine I've ever seen.  Have  you shown it to Clint?  I mean, he knows something about metalworking.  Maybe it's some kinda wierd alloy?^ ^Or...^Maybe aliens.");
             }
-            else if (n?.Name == "Clint" && item?.ItemId == QuestSetup.ObjectIds.BustedEngine)
+            else if (n?.Name == "Clint" && item?.ItemId == ObjectIds.BustedEngine)
             {
                 Spout(n, "Uh...#$b#What is it?  you say it's an Engine?$s#$b#I say it's wierd. . .  Hey, is that thing moving?$a#$b#I don't know.  Maybe the Wizard would know what it is, and even if he doesn't, he'll sure pretend like he does if you show it to him.$");
             }
-            else if ((n?.Name == "Abigail" || n?.Name == "Vincent") && item?.ItemId == QuestSetup.ObjectIds.BustedEngine)
+            else if ((n?.Name == "Abigail" || n?.Name == "Vincent") && item?.ItemId == ObjectIds.BustedEngine)
             {
                 Spout(n, "Oh wow...#$b#Can I have it?");
             }
-            else if (n?.Name == "Marnie" && item?.ItemId == QuestSetup.ObjectIds.BustedEngine)
+            else if (n?.Name == "Marnie" && item?.ItemId == ObjectIds.BustedEngine)
             {
                 Spout(n, "AAAAHHH!!!  IT'S MOVING!  TAKE IT AWAY!$a");
                 // TODO: Remember that Marnie saw it and have gossip later about it.
             }
-            else if (n is not null && item?.ItemId == QuestSetup.ObjectIds.BustedEngine)
+            else if (n is not null && item?.ItemId == ObjectIds.BustedEngine)
             {
                 Spout(n, "I've never seen anything like that before...#$b#It gives me this uncanny feeling like...  it's missing something.#$b#Wierd.");
             }
-            else if (n?.Name == "Sebastian" && item?.ItemId == QuestSetup.ObjectIds.WorkingEngine)
+            else if (n?.Name == "Sebastian" && item?.ItemId == ObjectIds.WorkingEngine)
             {
                 Spout(n, "Whoah....$s#$b#I mean, if you say it's fixed, I can believe it.  Definitely has a look of workiness about it!$l#$b#But seriously...  I shouldn't be installing this thing.  It's, yaknow, out of my area but...$s#$b#I hate to say it, my Sister would be able to figure it out, no matter how wierd it is.");
                 this.SetState(RestorationState.BringEngineToMaru);
             }
-            else if (n?.Name == "Maru" && item?.ItemId == QuestSetup.ObjectIds.WorkingEngine)
+            else if (n?.Name == "Maru" && item?.ItemId == ObjectIds.WorkingEngine)
             {
                 Spout(n, "Wow!  I mean I have no idea what it does, but I'm sure it'll look cool doing it!$h#$b#You want me to install it in the tractor?  Sure, I'll do it.  I helped Seb haul it out of the mud.  He really did a great job polishing it up.#$b#Just give me a day or so, k?  And be sure to drive it up here sometime, I want to ride it around!$l");
                 this.SetState(RestorationState.WaitForEngineInstall);

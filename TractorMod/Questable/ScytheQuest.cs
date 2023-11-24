@@ -108,7 +108,7 @@ namespace Pathoschild.Stardew.TractorMod.Questable
             }
 
 
-            if (item?.ItemId != QuestSetup.ObjectIds.BustedScythe || n is null)
+            if (item?.ItemId != ObjectIds.BustedScythe || n is null)
             {
                 return false;
             }
@@ -232,7 +232,7 @@ namespace Pathoschild.Stardew.TractorMod.Questable
         public void WorkingAttachmentBroughtToGarage()
         {
             this.questComplete();
-            Game1.player.modData[QuestSetup.ModDataKeys.ScytheQuestStatus] = "Complete";
+            Game1.player.modData[ModDataKeys.ScytheQuestStatus] = "Complete";
             Game1.player.removeFirstOfThisItemFromInventory(ObjectIds.WorkingScythe);
             Game1.DrawDialogue(new Dialogue(null, null, "Sweet!  You've now got a harvester attachment for your tractor!#$b#HINT: To use it, equip the scythe while on the tractor."));
         }

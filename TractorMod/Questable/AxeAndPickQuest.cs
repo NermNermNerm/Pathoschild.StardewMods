@@ -99,11 +99,11 @@ namespace Pathoschild.Stardew.TractorMod.Questable
 
         public override bool checkIfComplete(NPC? n, int number1, int number2, Item? item, string str, bool probe)
         {
-            if(n?.Name == "Clint" && item?.ItemId == QuestSetup.ObjectIds.BustedLoader)
+            if(n?.Name == "Clint" && item?.ItemId == ObjectIds.BustedLoader)
             {
                 // TODO: Properly implement the quest
                 Game1.player.removeItemFromInventory(item);
-                _ = Game1.player.addItemToInventory(new StardewValley.Object(QuestSetup.ObjectIds.WorkingLoader, 1));
+                _ = Game1.player.addItemToInventory(new StardewValley.Object(ObjectIds.WorkingLoader, 1));
                 this.SetState(AxeAndPickQuestState.InstallTheLoader);
             }
 
@@ -113,7 +113,7 @@ namespace Pathoschild.Stardew.TractorMod.Questable
         public void WorkingAttachmentBroughtToGarage()
         {
             this.questComplete();
-            Game1.player.modData[QuestSetup.ModDataKeys.AxeAndPickQuestStatus] = AxeAndPickQuestState.Complete.ToString();
+            Game1.player.modData[ModDataKeys.AxeAndPickQuestStatus] = AxeAndPickQuestState.Complete.ToString();
             Game1.player.removeFirstOfThisItemFromInventory(ObjectIds.WorkingLoader);
             Game1.DrawDialogue(new Dialogue(null, null, "Sweet!  You've now got a front-end loader attachment for your tractor to clear out debris!#$b#HINT: To use it, equip the pick or the axe while on the tractor."));
         }

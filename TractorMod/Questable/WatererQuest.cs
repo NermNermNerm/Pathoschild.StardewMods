@@ -146,7 +146,7 @@ namespace Pathoschild.Stardew.TractorMod.Questable
         public void WorkingAttachmentBroughtToGarage()
         {
             this.questComplete();
-            Game1.player.modData[QuestSetup.ModDataKeys.WateringQuestStatus] = "Complete";
+            Game1.player.modData[ModDataKeys.WateringQuestStatus] = "Complete";
             Game1.player.removeFirstOfThisItemFromInventory(ObjectIds.WorkingWaterer);
             Game1.DrawDialogue(new Dialogue(null, null, "Awesome!  You've now got a way to water your crops with your tractor!#$b#HINT: To use it, equip the watering can while on the tractor."));
         }
@@ -218,7 +218,7 @@ namespace Pathoschild.Stardew.TractorMod.Questable
             if (state == WatererQuestState.WaitForMaruDay1)
             {
                 state = WatererQuestState.WaitForMaruDay2;
-                Game1.player.mailForTomorrow.Add(QuestSetup.MailKeys.WatererRepaired);
+                Game1.player.mailForTomorrow.Add(MailKeys.WatererRepaired);
             }
 
             if (state != WatererQuestState.NotStarted && state != WatererQuestState.Complete)
