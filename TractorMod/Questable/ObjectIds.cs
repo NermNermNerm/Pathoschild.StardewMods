@@ -50,7 +50,7 @@ namespace Pathoschild.Stardew.TractorMod.Questable
                 1);
             addQuestItem(
                 BustedScythe,
-                "nonfunctional harvesting attachment for the tractor", // TODO: 18n
+                "core of the harvesting attachment for the tractor", // TODO: 18n
                 "This looks like it was a tractor attachment for harvesting crops, but it doesn't seem to be all together.", // TODO: 18n
                 2);
             addQuestItem(

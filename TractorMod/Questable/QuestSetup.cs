@@ -72,16 +72,18 @@ namespace Pathoschild.Stardew.TractorMod.Questable
 
         private void GameLoop_OneSecondUpdateTicked(object? sender, OneSecondUpdateTickedEventArgs e)
         {
-            var itemInHand = Game1.player.CurrentItem;
-            if (itemInHand is null)
+            var itemInHand = Game1.player?.CurrentItem;
+            if (Game1.player is not null && Game1.player.currentLocation is not null && itemInHand is not null && Game1.player.currentLocation == Game1.getFarm()
+                && Game1.player.currentLocation.buildings
+                    .OfType<Stable>()
+                    .Where(s => s.buildingType.Value == GarageBuildingId)
+                    .Any(s => IsPlayerInGarage(Game1.player, s)))
             {
-                return;
-            }
-
-            foreach (var qc in this.QuestControllers.Where(qc => qc.WorkingAttachmentPartId == itemInHand.ItemId))
-            {
-                qc.WorkingAttachmentBroughtToGarage();
-                this.UpdateTractorModConfig();
+                foreach (var qc in this.QuestControllers.Where(qc => qc.WorkingAttachmentPartId == itemInHand.ItemId))
+                {
+                    qc.WorkingAttachmentBroughtToGarage();
+                    this.UpdateTractorModConfig();
+                }
             }
         }
 
@@ -103,9 +105,9 @@ namespace Pathoschild.Stardew.TractorMod.Questable
                 }
 
                 var workingPart = e.Added.FirstOrDefault(i => i.ItemId == qc.WorkingAttachmentPartId);
-                if (bustedPart is not null)
+                if (workingPart is not null)
                 {
-                    qc.PlayerGotWorkingPart(e.Player, bustedPart);
+                    qc.PlayerGotWorkingPart(e.Player, workingPart);
                 }
             }
         }
@@ -121,7 +123,6 @@ namespace Pathoschild.Stardew.TractorMod.Questable
             {
                 qc.OnDayStart();
             }
-
 
             RestoreTractorQuest.OnDayStart(this.Helper, this.Monitor, garage);
             this.SetupMissingPartConversations();
@@ -237,6 +238,7 @@ namespace Pathoschild.Stardew.TractorMod.Questable
 
         internal void OnAssetRequested(AssetRequestedEventArgs e, ModConfig config)
         {
+            this.Monitor.Log($"OnAssetRequested({e.NameWithoutLocale.Name})");
             if (!config.QuestDriven)
             {
                 return;
