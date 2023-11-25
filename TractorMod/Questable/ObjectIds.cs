@@ -91,7 +91,7 @@ namespace Pathoschild.Stardew.TractorMod.Questable
             addQuestItem(
                 AlexesOldShoe,
                 "pair of rather nice shoes", // TODO: 18n
-                "Shoes that Alex threw away, certified 14EEE!", // TODO: 18n
+                "14EEE, slightly smudged", // TODO: 18n
                 10);
             addQuestItem(
                 DyedShoe,
@@ -100,12 +100,12 @@ namespace Pathoschild.Stardew.TractorMod.Questable
                 11);
             addQuestItem(
                 BustedSeeder,
-                "broken fertilizer and seed Seeder.", // TODO: 18n
+                "broken fertilizer and seed Seeder", // TODO: 18n
                 "The old fertilizer and seed spread for the old tractor.  Needs a good bit of fiddling to make work.", // TODO: 18n
                 12);
             addQuestItem(
                 WorkingSeeder,
-                "fertilizer and seed Seeder attachment for the tractor.", // TODO: 18n
+                "fertilizer and seed Seeder attachment for the tractor", // TODO: 18n
                 "Just needs to be brought back to the garage to use it on the tractor.", // TODO: 18n
                 13);
         }

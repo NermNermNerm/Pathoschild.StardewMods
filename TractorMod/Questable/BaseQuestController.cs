@@ -34,7 +34,6 @@ namespace Pathoschild.Stardew.TractorMod.Questable
         {
             Game1.DrawDialogue(new Dialogue(null, null, message));
         }
-
     }
 
     public abstract class BaseQuestController<TStateEnum, TQuest> : BaseQuestController
@@ -75,6 +74,7 @@ namespace Pathoschild.Stardew.TractorMod.Questable
             this.AnnounceGotBrokenPart(brokenPart);
             var quest = new TQuest();
             player.questLog.Add(quest);
+            this.OnQuestStarted();
         }
 
         public override void PlayerGotWorkingPart(Farmer player, StardewValley.Item workingPart)
@@ -170,9 +170,10 @@ namespace Pathoschild.Stardew.TractorMod.Questable
         protected void PlaceBrokenPartUnderClump(int preferredResourceClumpToHideUnder)
         {
             var farm = Game1.getFarm();
-            if (farm.objects.Values.Any(o => o.ItemId == this.BrokenAttachmentPartId))
+            var existing = farm.objects.Values.FirstOrDefault(o => o.ItemId == this.BrokenAttachmentPartId);
+            if (existing is not null)
             {
-                // Already placed - nothing to do.
+                this.mod.Monitor.VerboseLog($"{this.BrokenAttachmentPartId} is already placed at {existing.TileLocation.X},{existing.TileLocation.Y}");
                 return;
             }
 
@@ -182,6 +183,7 @@ namespace Pathoschild.Stardew.TractorMod.Questable
                 var o = ItemRegistry.Create<StardewValley.Object>(this.BrokenAttachmentPartId);
                 o.Location = Game1.getFarm();
                 o.TileLocation = position;
+                this.mod.Monitor.VerboseLog($"{this.BrokenAttachmentPartId} placed at {position.X},{position.Y}");
                 o.IsSpawnedObject = true;
                 farm.objects[o.TileLocation] = o;
             }

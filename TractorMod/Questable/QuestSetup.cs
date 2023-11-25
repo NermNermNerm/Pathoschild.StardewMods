@@ -30,7 +30,7 @@ namespace Pathoschild.Stardew.TractorMod.Questable
         internal QuestSetup(ModEntry mod)
         {
             this.QuestControllers = new List<BaseQuestController> {
-                new AxeAndPickQuestController(this),
+                new LoaderQuestController(this),
                 new ScytheQuestController(this),
                 new SeederQuestController(this),
                 new WatererQuestController(this),
@@ -187,13 +187,13 @@ namespace Pathoschild.Stardew.TractorMod.Questable
 
         internal AxeConfig GetAxeConfig(AxeConfig configured)
         {
-            return GetModConfig<AxeAndPickQuestState>(ModDataKeys.AxeAndPickQuestStatus) == AxeAndPickQuestState.Complete
+            return GetModConfig<LoaderQuestState>(ModDataKeys.LoaderQuestStatus) == LoaderQuestState.Complete
                 ? configured : Disabled<AxeConfig>();
         }
 
         internal PickAxeConfig GetPickConfig(PickAxeConfig configured)
         {
-            return GetModConfig<AxeAndPickQuestState>(ModDataKeys.AxeAndPickQuestStatus) == AxeAndPickQuestState.Complete
+            return GetModConfig<LoaderQuestState>(ModDataKeys.LoaderQuestStatus) == LoaderQuestState.Complete
                 ? configured : Disabled<PickAxeConfig>();
         }
 
@@ -238,7 +238,7 @@ namespace Pathoschild.Stardew.TractorMod.Questable
 
         internal void OnAssetRequested(AssetRequestedEventArgs e, ModConfig config)
         {
-            this.Monitor.Log($"OnAssetRequested({e.NameWithoutLocale.Name})");
+            // this.Monitor.Log($"OnAssetRequested({e.NameWithoutLocale.Name})");
             if (!config.QuestDriven)
             {
                 return;

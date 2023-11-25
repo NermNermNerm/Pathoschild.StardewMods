@@ -4,7 +4,7 @@ namespace Pathoschild.Stardew.TractorMod.Questable
     {
         public const string MainQuestStatus = "QuestableTractorMod.MainQuestStatus";
         public const string DerelictPosition = "QuestableTractorMod.DerelictPosition";
-        public const string AxeAndPickQuestStatus = "QuestableTractorMod.AxeAndPickQuestStatus";
+        public const string LoaderQuestStatus = "QuestableTractorMod.LoaderStatus";
         public const string ScytheQuestStatus = "QuestableTractorMod.ScytheQuestStatus";
         public const string WateringQuestStatus = "QuestableTractorMod.WateringQuestStatus";
         public const string SpreadingQuestStatus = "QuestableTractorMod.SpreadingQuestStatus";
