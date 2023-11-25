@@ -126,6 +126,7 @@ namespace Pathoschild.Stardew.TractorMod.Questable
                     }
                     break;
                 case RestorationState.WaitForEngineInstall:
+                    Game1.player.mailbox.Add(MailKeys.TractorDoneMail);
                     restorationStatus = RestorationState.Complete;
                     break;
             }
@@ -288,7 +289,7 @@ namespace Pathoschild.Stardew.TractorMod.Questable
             }
             else if (n?.Name == "Wizard" && this.state == RestorationState.TalkToWizard && item?.ItemId == ObjectIds.BustedEngine)
             {
-                Spout(n, "Oh...  Now where did you get that??!$l#$b#Ooooh... Ah.  Yes.  I see...  Mmm...$s#$b#Yes.  Your grandfather dabbled a bit in Forest Magic.  He was nowhere near as adept a practitioner as myself, to be sure...#$b#When the mundane engine broke down and he couldn't afford to fix it, he enlisted some forest magic to make a new one.#$b#As you can see, the Junimos that he recruited to keep the motor running have gotten bored and wandered away.  You'll need to coax them back.$s#$b#Now, pay attention!  This will require your utmost concentration!$a#$b#You must place the engine, 20 sap, 20 mixed seeds, and an aquamarine in a chest in the secret woods in front of the statue...#$b#Then, you must run around the chest, six times, clockwise very, very quickly.  Overnight, your engine will be restored.#$b#Now GO!  I have concerns much greater than yours right now.$a");
+                Spout(n, "Oh...  Now where did you get that??!$l#$b#Ooooh... Ah.  Yes.  I see...  Mmm...$s#$b#Yes.  Your grandfather dabbled a bit in Forest Magic.  He was nowhere near as adept as myself, of course...#$b#He lacked the mechanical ability to restore the mundane engine, so he enlisted some forest magic to make one.#$b#As you can see, the Junimos that he recruited to keep the motor running have gotten bored and wandered away.  You'll need to coax them back.$s#$b#Now, pay attention!  This will require your utmost concentration!$a#$b#You must place the engine, 20 sap, 20 mixed seeds, and an aquamarine in a chest in the secret woods in front of the statue...#$b#Then, you must run around the chest, six times, clockwise very, very quickly.  Overnight, your engine will be restored.#$b#Now GO!  I have concerns much greater than yours right now.$a");
                 this.SetState(RestorationState.BringStuffToForest);
             }
             else if (n?.Name == "Sebastian" && item?.ItemId == ObjectIds.BustedEngine)
@@ -305,7 +306,7 @@ namespace Pathoschild.Stardew.TractorMod.Questable
             }
             else if (n?.Name == "Marnie" && item?.ItemId == ObjectIds.BustedEngine)
             {
-                Spout(n, "AAAAHHH!!!  IT'S MOVING!  TAKE IT AWAY!$a");
+                Spout(n, "AAAAHHH!!!  IT'S MOVING!  TAKE IT AWAY!$4");
                 // TODO: Remember that Marnie saw it and have gossip later about it.
             }
             else if (n is not null && item?.ItemId == ObjectIds.BustedEngine)

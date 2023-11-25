@@ -111,7 +111,7 @@ namespace Pathoschild.Stardew.TractorMod.Questable
 
         public static void PlaceInGarage(IModHelper helper, IMonitor monitor, Stable garage)
         {
-            Place(helper, new Vector2(garage.tileX.Value + 1, garage.tileY.Value));
+            Place(helper, new Vector2(garage.tileX.Value + 1, garage.tileY.Value + 1));
         }
 
         private static void Place(IModHelper helper, Vector2 position)
