@@ -79,6 +79,11 @@ namespace Pathoschild.Stardew.TractorMod.Questable
 
         private static bool Prefix_GetFish(ref Item __result)
         {
+            if (Game1.player.currentLocation is not Farm)
+            {
+                return false;
+            }
+
             const string TrashItemId = "(O)168";
             // TODO: Maybe it'd be cool to remember where the thing was hooked and only boost the odds like
             // this if you're fishing in the same spot where you hooked it when the quest started.
