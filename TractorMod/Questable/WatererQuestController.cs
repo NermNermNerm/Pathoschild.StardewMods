@@ -86,11 +86,21 @@ namespace Pathoschild.Stardew.TractorMod.Questable
             {
                 if (Game1.random.NextDouble() < .3)
                 {
+                    Game1.playSound("submarine_landing");
                     BorrowHarpoonQuest.GotTheBigOne();
                     __result = ItemRegistry.Create(ObjectIds.BustedWaterer);
                 }
                 else
                 {
+                    Game1.playSound("clank");
+                    string message = new string[]
+                    {
+                        "Aaahhh! ! I had it!",
+                        "Nope...  nothing",
+                        "OOoh so close."
+                    }[Game1.random.Next(3)];
+                    Game1.addHUDMessage(new HUDMessage(message) { noIcon = true });
+
                     __result = ItemRegistry.Create(TrashItemId);
                 }
                 return false;

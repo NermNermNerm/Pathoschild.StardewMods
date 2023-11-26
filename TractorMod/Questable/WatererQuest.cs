@@ -26,6 +26,7 @@ namespace Pathoschild.Stardew.TractorMod.Questable
 
         public override bool checkIfComplete(NPC? n, int number1, int number2, Item? item, string str, bool probe)
         {
+            bool itemIsWaterer = item?.Name == ObjectIds.BustedWaterer;
             if (n?.Name == "Maru" && item is null && this.State == WatererQuestState.WaitForMaruDay1 && !this.pesteredMaruToday)
             {
                 Spout(n, "I'm still working on the irrigation system; you should have it day after tomorrow.");
@@ -38,8 +39,7 @@ namespace Pathoschild.Stardew.TractorMod.Questable
                 this.pesteredMaruToday = true;
                 return false;
             }
-
-            if (n is not null && new string[] { "Clint", "Lewis", "Pierre", "Abigail", "Pam", "Marnie", "Willy", "Linus", "Gus", "George", "Caroline" }.Contains(n.Name))
+            if (itemIsWaterer && n is not null && new string[] { "Clint", "Lewis", "Pierre", "Abigail", "Pam", "Marnie", "Willy", "Linus", "Gus", "George", "Caroline" }.Contains(n.Name))
             {
                 Spout(n, "Oh, that isn't...  It is!  It's your grandpa's legendary irrigation attachment!  And you *fished* it up you say?  Hah!  Well you would'a had to, wouldn'tya!$1#$b#. . . #$b#Sorry, I gotta compose myself.  You'll want to take this up to the mountain.  Show it to Robin, she can give you the first-hand account.$1#$b#It might not be safe to show it to Demetrius.  I think he's still working through the afteraffects...$s");
 
@@ -49,7 +49,7 @@ namespace Pathoschild.Stardew.TractorMod.Questable
                     this.SetObjective();
                 }
             }
-            else if (n?.Name == "Demetrius")
+            else if (itemIsWaterer && n?.Name == "Demetrius")
             {
                 Spout(n, "Oh my!  Is that the irrigation system?  It is!  None of us expected to see that again, not after that . . .$3#$b#Wait, did Robin put you up to this?#$b#Nope, I don't want to know.  Well, yes, I got very wet, but it wasn't any big deal.  Not nearly as much as she plays it up to be.  Not at all...#4#$b#But you just want the thing fixed, don't you.  Well, it seems like a complicated device, but I bet Maru would have no trouble with it.  Why don't you show it to her?");
                 if (this.State < WatererQuestState.MaruFingered)
@@ -60,7 +60,7 @@ namespace Pathoschild.Stardew.TractorMod.Questable
                     n.doEmote(12); // grumpy
                 }
             }
-            else if (n?.Name == "Robin")
+            else if (itemIsWaterer && n?.Name == "Robin")
             {
                 Spout(n, "Oh you didn't!!  You fished up the watering doohickey?  Oh my I'll never forget that day!  Your granddad had the idea that instead of using the pump to fill it up he could just back his tractor into the pond.  Suffice it to say the tractor came out, but the irrigator did not!  He huffed up to the mountain, half soaked, thinking that Demetrius would have a net.  Well Demetrius was feeling especially can-do that day and offered to come help and, well, Maru was quite small and just had to go with her Dad everywhere and so I came along to ride herd.  Long story short, Demetrius ended covered in mud right up to his starched buttoned up collar.  Maru decided to go rescue him, I went chasing after her, and, well, we all ended up wet, but Demetrius, well, his self-image took a hit that day, heh.#$b#Heh, and you know what happened to the irrigator, donchanow!$l#$b#You should take it to Maru and, heh, youknow, best not to bring it up with Demetrius!$4");
                 if (this.State < WatererQuestState.MaruFingered)
@@ -75,7 +75,7 @@ namespace Pathoschild.Stardew.TractorMod.Questable
                 }
                 return false;
             }
-            else if (n?.Name == "Maru")
+            else if (itemIsWaterer && n?.Name == "Maru")
             {
                 switch (this.State)
                 {
@@ -87,7 +87,7 @@ namespace Pathoschild.Stardew.TractorMod.Questable
                         this.SetObjective();
                         break;
                     case WatererQuestState.GetGoldBars:
-                        if (this.TryTakeItemsFromPlayer("336", goldBarCount)) //336=gold bar
+                        if (this.TryTakeItemsFromPlayer("336", goldBarCount, ObjectIds.BustedWaterer, 1)) //336=gold bar
                         {
                             Spout(n, "Alrighty, I'll get to work on it and have it back to you in a couple days.  I'll just drop it in the mail for you.");
                             this.State = WatererQuestState.WaitForMaruDay1;

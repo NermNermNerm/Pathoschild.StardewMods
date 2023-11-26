@@ -77,7 +77,7 @@ namespace Pathoschild.Stardew.TractorMod.Questable
             }
             else
             {
-                stack1.Stack -= 3;
+                stack1.Stack -= count1;
             }
 
             if (stack2.Stack == count2)
@@ -86,7 +86,7 @@ namespace Pathoschild.Stardew.TractorMod.Questable
             }
             else
             {
-                stack2.Stack -= 3;
+                stack2.Stack -= count2;
             }
 
             return true;

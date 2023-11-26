@@ -54,14 +54,16 @@ namespace Pathoschild.Stardew.TractorMod.Questable
             }
         }
 
-        public override bool checkIfComplete(NPC n, int number1 = -1, int number2 = -2, Item item = null, string str = null, bool probe = false)
+        public override bool checkIfComplete(NPC n, int number1, int number2, Item item, string str, bool probe)
         {
-            if (n?.Name == "Willy" && this.state == HarpoonQuestState.ReturnThePole && item?.ItemId == WatererQuestController.HarpoonToolId)
+            var harpoon = Game1.player.Items.FirstOrDefault(i => i?.ItemId == WatererQuestController.HarpoonToolId);
+            if (n?.Name == "Willy" && this.state == HarpoonQuestState.ReturnThePole && harpoon is not null)
             {
                 BaseQuestController.Spout(n, "Ya reeled that ol water tank on wheels in, did ya laddy!$3#$b#Aye I do believe this'll be the talk of the Stardrop for many Fridays to come!$1");
-                Game1.player.removeItemFromInventory(item);
+                Game1.player.removeItemFromInventory(harpoon);
                 Game1.player.changeFriendship(240, n);
                 n.doEmote(20); // hearts
+                this.questComplete();
                 return true;
             }
             else if (n?.Name == "Willy" && this.state == HarpoonQuestState.GetThePole && Game1.player.currentLocation.Name == "FishShop")

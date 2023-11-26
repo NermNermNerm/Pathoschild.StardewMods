@@ -24,9 +24,10 @@ namespace Pathoschild.Stardew.TractorMod.Questable
 
         public static void Spout(NPC n, string message)
         {
-            n.CurrentDialogue.Clear();
-            n.CurrentDialogue.Push(new Dialogue(n, null, message));
-            Game1.drawDialogue(n);
+            Game1.DrawDialogue(new Dialogue(n, null, message));
+            //n.CurrentDialogue.Clear();
+            //n.CurrentDialogue.Push(new Dialogue(n, null, message));
+            //Game1.drawDialogue(n);
         }
 
         public static void Spout(string message)
