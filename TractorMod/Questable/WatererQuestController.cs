@@ -1,13 +1,23 @@
+using System;
+using System.Collections.Generic;
+using HarmonyLib;
+using Microsoft.Xna.Framework.Graphics;
 using StardewValley;
+using StardewValley.GameData.Tools;
 
 namespace Pathoschild.Stardew.TractorMod.Questable
 {
     public class WatererQuestController
         : BaseQuestController<WatererQuestState, WatererQuest>
     {
+        public static bool hasPatchBeenInstalled = false;
+
+        public const string HarpoonToolId = "NermNermNerm.QuestableTractor.Harpoon";
+
         public WatererQuestController(QuestSetup mod)
             : base(mod)
-        { }
+        {
+        }
 
 
         public static float chanceOfCatchingQuestItem = 0;
@@ -33,23 +43,90 @@ namespace Pathoschild.Stardew.TractorMod.Questable
             chanceOfCatchingQuestItem = 0;
         }
 
-        public override void OnDayStart()
+        public override void OnDayStarted()
         {
             chanceOfCatchingQuestItem = 0;
             if (this.IsStarted)
             {
                 chanceOfCatchingQuestItem = 0; // No chance - already pulled it up.
-            }
-            else if (RestoreTractorQuest.IsTractorUnlocked)
-            {
-                chanceOfCatchingQuestItem = 0.01f + Game1.Date.TotalDays / 200f;
+                // the docs for Harmony.Unpatch make it seem like a dangerous thing to do,
+                // so we'll leave the patch on even when we know it's useless.
             }
             else
             {
-                chanceOfCatchingQuestItem = .01f;
-            }
+                if (RestoreTractorQuest.IsTractorUnlocked)
+                {
+                    chanceOfCatchingQuestItem = 0.01f + Game1.Date.TotalDays / 200f;
+                }
+                else
+                {
+                    chanceOfCatchingQuestItem = .01f;
+                }
 
-            base.OnDayStart();
+                if (!hasPatchBeenInstalled)
+                {
+                    // Undoing a Harmony patch is sketchy, so we're going to go ahead and install our patch even if the quest is irrelevant.
+                    // It might be wiser to not do it until we know the quest hasn't been started
+                    var farmType = typeof(Farm);
+                    var getFishMethod = farmType.GetMethod("getFish");
+                    this.mod.Harmony.Patch(getFishMethod, prefix: new HarmonyMethod(typeof(WatererQuestController), nameof(Prefix_GetFish)));
+                    hasPatchBeenInstalled = true;
+                }
+            }
+            base.OnDayStarted();
+        }
+
+
+        private static bool Prefix_GetFish(ref Item __result)
+        {
+            const string TrashItemId = "(O)168";
+            // TODO: Maybe it'd be cool to remember where the thing was hooked and only boost the odds like
+            // this if you're fishing in the same spot where you hooked it when the quest started.
+            if (Game1.player.CurrentTool?.ItemId == HarpoonToolId && chanceOfCatchingQuestItem > 0)
+            {
+                if (Game1.random.NextDouble() < .3)
+                {
+                    BorrowHarpoonQuest.GotTheBigOne();
+                    __result = ItemRegistry.Create(ObjectIds.BustedWaterer);
+                }
+                else
+                {
+                    __result = ItemRegistry.Create(TrashItemId);
+                }
+                return false;
+            }
+            else if (Game1.random.NextDouble() < chanceOfCatchingQuestItem)
+            {
+                __result = ItemRegistry.Create(TrashItemId);
+                BorrowHarpoonQuest.StartQuest();
+                return false;
+            }
+            else
+            {
+                return true;
+            }
+        }
+
+        internal static void EditToolAssets(IDictionary<string, ToolData> data)
+        {
+            data[HarpoonToolId] = new ToolData
+            {
+                ClassName = "FishingRod",
+                Name = "Harpoon",
+                AttachmentSlots = 0,
+                SalePrice = 0,
+                DisplayName = "Great Grandpappy's Harpoon",
+                Description = "Willy's Great Grandpappy used this to hunt whales back in the day.",
+                Texture = "Mods/PathosChild.TractorMod/QuestSprites",
+                SpriteIndex = 14,
+                MenuSpriteIndex = -1,
+                UpgradeLevel = 0,
+                ApplyUpgradeLevelToDisplayName = false,
+                ConventionalUpgradeFrom = null,
+                UpgradeFrom = null,
+                CanBeLostOnDeath = false,
+                SetProperties = null,
+            };
         }
     }
 }

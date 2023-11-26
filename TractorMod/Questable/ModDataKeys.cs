@@ -10,5 +10,6 @@ namespace Pathoschild.Stardew.TractorMod.Questable
         public const string SpreadingQuestStatus = "QuestableTractorMod.SpreadingQuestStatus";
         public const string SeederQuestStatus = "QuestableTractorMod.SeederQuestStatus";
         public const string SeederQuestGeorgeSentMail = "QuestableTractorMod.SeederQuestGeorgeSentMail";
+        public const string BorrowHarpoonQuestStatus = "QuestableTractorMod.BorrowHarpoonQuestStatus";
     };
 }

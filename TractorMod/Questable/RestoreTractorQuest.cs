@@ -201,7 +201,7 @@ namespace Pathoschild.Stardew.TractorMod.Questable
             return true;
         }
 
-        public static void OnDayStart(IModHelper helper, IMonitor monitor, Stable? garage)
+        public static void OnDayStarted(IModHelper helper, IMonitor monitor, Stable? garage)
         {
             if (!Game1.player.modData.TryGetValue(ModDataKeys.MainQuestStatus, out string? statusAsString)
                 || !Enum.TryParse(statusAsString, true, out RestorationState mainQuestStatusAtDayStart))

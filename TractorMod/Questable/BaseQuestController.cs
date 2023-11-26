@@ -11,7 +11,7 @@ namespace Pathoschild.Stardew.TractorMod.Questable
     {
         protected const string QuestCompleteStateMagicWord = "Complete";
 
-        public abstract void OnDayStart();
+        public abstract void OnDayStarted();
         public abstract void OnDayEnding();
 
         protected abstract string ModDataKey { get; }
@@ -139,7 +139,7 @@ namespace Pathoschild.Stardew.TractorMod.Questable
             }
         }
 
-        public override void OnDayStart()
+        public override void OnDayStarted()
         {
             if (!Game1.player.modData.TryGetValue(this.ModDataKey, out string stateAsString))
             {

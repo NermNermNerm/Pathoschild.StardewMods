@@ -11,6 +11,7 @@ using StardewValley;
 using StardewValley.Buildings;
 using StardewValley.GameData.Buildings;
 using StardewValley.GameData.Objects;
+using StardewValley.GameData.Tools;
 
 namespace Pathoschild.Stardew.TractorMod.Questable
 {
@@ -27,46 +28,27 @@ namespace Pathoschild.Stardew.TractorMod.Questable
         public IModHelper Helper => this.mod.Helper;
         public IMonitor Monitor => this.mod.Monitor;
 
+        public Harmony Harmony = null!;
+
+        // TODO: See if we can get rid of this.
         public static QuestSetup Instance = null!;
 
         internal QuestSetup(ModEntry mod)
         {
+            Instance = this;
+            this.mod = mod;
+            this.Harmony = new Harmony(mod.ModManifest.UniqueID);
+
             this.QuestControllers = new List<BaseQuestController> {
                 new LoaderQuestController(this),
                 new ScytheQuestController(this),
                 new SeederQuestController(this),
                 new WatererQuestController(this),
             };
-            this.mod = mod;
 
             this.Helper.Events.GameLoop.OneSecondUpdateTicked += this.GameLoop_OneSecondUpdateTicked;
-
-            var harmony = new Harmony(mod.ModManifest.UniqueID);
-            var farmType = typeof(Farm);
-            var getFishMethod = farmType.GetMethod("getFish");
-            harmony.Patch(getFishMethod, prefix: new HarmonyMethod(typeof(QuestSetup), nameof(Prefix_GetFish)));
-
-            Instance = this;
         }
 
-        private static bool Prefix_GetFish(ref Item __result)
-        {
-            // TODO: Maybe it'd be cool if we somehow make this cast fail, tell the player that they snagged something big,
-            //  remember the position (there's a vector2 where it hits in), and make it so that if they land the bobber in the same
-            //  spot they always get the "chance".  If they do this twice in one day, they'll get a suggestion to go to Willy's
-            //  shop and see if he's got anything.  If they do, they'll see a "Whale catcher rental", which looks like a winch.
-            //  This item will disappear from inventory at the end of the day.  If they are using that when they snag the part,
-            //  it comes out.
-            if (Game1.random.NextDouble() < WatererQuestController.chanceOfCatchingQuestItem)
-            {
-                __result = ItemRegistry.Create(ObjectIds.BustedWaterer);
-                return false;
-            }
-            else
-            {
-                return true;
-            }
-        }
 
         private void UpdateTractorModConfig()
         {
@@ -106,10 +88,11 @@ namespace Pathoschild.Stardew.TractorMod.Questable
 
             foreach (var qc in this.QuestControllers)
             {
-                qc.OnDayStart();
+                qc.OnDayStarted();
             }
 
-            RestoreTractorQuest.OnDayStart(this.Helper, this.Monitor, garage);
+            RestoreTractorQuest.OnDayStarted(this.Helper, this.Monitor, garage);
+            BorrowHarpoonQuest.OnDayStart(this);
             this.SetupMissingPartConversations();
         }
 
@@ -162,6 +145,8 @@ namespace Pathoschild.Stardew.TractorMod.Questable
             {
                 qc.OnDayEnding();
             }
+
+            BorrowHarpoonQuest.OnDayEnding();
         }
 
         public static T GetModConfig<T>(string key)
@@ -298,6 +283,13 @@ namespace Pathoschild.Stardew.TractorMod.Questable
                 e.Edit(editor =>
                 {
                     MailKeys.EditAssets(editor.AsDictionary<string, string>().Data);
+                });
+            }
+            else if (e.NameWithoutLocale.IsEquivalentTo("Data/Tools"))
+            {
+                e.Edit(editor =>
+                {
+                    WatererQuestController.EditToolAssets(editor.AsDictionary<string, ToolData>().Data);
                 });
             }
             else if (e.NameWithoutLocale.StartsWith("Characters/Dialogue/"))
