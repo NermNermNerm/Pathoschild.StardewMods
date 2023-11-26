@@ -3,6 +3,7 @@ using System.Linq;
 using StardewModdingAPI;
 using StardewValley;
 using Microsoft.Xna.Framework;
+using System.Collections.Generic;
 
 namespace Pathoschild.Stardew.TractorMod.Questable
 {
@@ -21,11 +22,9 @@ namespace Pathoschild.Stardew.TractorMod.Questable
 
         public abstract void WorkingAttachmentBroughtToGarage();
 
-        public abstract void PlayerGotBrokenPart(Farmer player, StardewValley.Item brokenPart);
-        public abstract void PlayerGotWorkingPart(Farmer player, StardewValley.Item brokenPart);
-
         public static void Spout(NPC n, string message)
         {
+            n.CurrentDialogue.Clear();
             n.CurrentDialogue.Push(new Dialogue(n, null, message));
             Game1.drawDialogue(n);
         }
@@ -57,14 +56,8 @@ namespace Pathoschild.Stardew.TractorMod.Questable
         /// </summary>
         protected virtual void OnQuestStarted() { }
 
-        public override void PlayerGotBrokenPart(Farmer player, Item brokenPart)
+        public void PlayerGotBrokenPart(Item brokenPart)
         {
-            if (!player.IsMainPlayer)
-            {
-                Spout("This item is for unlocking the tractor - only the host can advance this quest.  Give this item to the host.");
-                return;
-            }
-
             if (Game1.player.questLog.OfType<TQuest>().Any())
             {
                 this.mod.Monitor.Log($"Player found a broken attachment, {brokenPart.ItemId}, when the quest was active?!");
@@ -73,18 +66,14 @@ namespace Pathoschild.Stardew.TractorMod.Questable
 
             this.AnnounceGotBrokenPart(brokenPart);
             var quest = new TQuest();
-            player.questLog.Add(quest);
+            Game1.player.questLog.Add(quest);
             this.OnQuestStarted();
+            this.MonitorInventoryForItem(this.WorkingAttachmentPartId, this.PlayerGotWorkingPart);
+            this.StopMonitoringInventoryFor(this.BrokenAttachmentPartId);
         }
 
-        public override void PlayerGotWorkingPart(Farmer player, StardewValley.Item workingPart)
+        public void PlayerGotWorkingPart(Item workingPart)
         {
-            if (!player.IsMainPlayer)
-            {
-                Spout("This item is for unlocking the tractor - only the host can advance this quest.  Give this item to the host.");
-                return;
-            }
-
             var quest = Game1.player.questLog.OfType<TQuest>().FirstOrDefault();
             if (quest is null)
             {
@@ -94,6 +83,7 @@ namespace Pathoschild.Stardew.TractorMod.Questable
             }
 
             quest.GotWorkingPart(workingPart);
+            this.StopMonitoringInventoryFor(this.WorkingAttachmentPartId);
         }
 
         public override void WorkingAttachmentBroughtToGarage()
@@ -126,33 +116,78 @@ namespace Pathoschild.Stardew.TractorMod.Questable
             }
         }
 
+        private readonly Dictionary<string, Action<Item>> itemsToWatch = new();
+        private bool isWatchingInventory;
+
+        protected void MonitorInventoryForItem(string itemId, Action<Item> onItemAdded)
+        {
+            this.itemsToWatch[itemId] = onItemAdded;
+            if (!this.isWatchingInventory)
+            {
+                this.mod.Helper.Events.Player.InventoryChanged += this.Player_InventoryChanged;
+                this.isWatchingInventory = true;
+            }
+        }
+
+        protected void StopMonitoringInventoryFor(string itemId)
+        {
+            this.itemsToWatch.Remove(itemId);
+            if (!this.itemsToWatch.Any() && this.isWatchingInventory)
+            {
+                this.mod.Helper.Events.Player.InventoryChanged -= this.Player_InventoryChanged;
+                this.isWatchingInventory = false;
+            }
+        }
+
         public override void OnDayStart()
         {
             if (!Game1.player.modData.TryGetValue(this.ModDataKey, out string stateAsString))
             {
                 // Quest is not started.
                 this.HideStarterItemIfNeeded();
-                return;
+                this.MonitorInventoryForItem(this.BrokenAttachmentPartId, this.PlayerGotBrokenPart);
             }
+            else if (stateAsString != QuestCompleteStateMagicWord)
+            {
+                var newQuest = this.Deserialize(stateAsString);
+                if (newQuest is null)
+                {
+                    // Try to recover from the fault by blowing away the data.  This means that the
+                    // next day, we'll hit the item-re-plant logic.
+                    Game1.player.modData.Remove(this.ModDataKey);
+                }
+                else
+                {
+                    newQuest.MarkAsViewed();
+                    newQuest.AdvanceStateForDayPassing();
+                    Game1.player.questLog.Add(newQuest);
+                    this.MonitorInventoryForItem(this.WorkingAttachmentPartId, this.PlayerGotWorkingPart);
+                    this.MonitorQuestItems();
+                }
+            }
+        }
 
-            if (stateAsString == QuestCompleteStateMagicWord)
-            {
-                // Quest is complete
-                return;
-            }
+        /// <summary>
+        ///  Called once a day when the quest is active to ensure that we're monitoring for items even after reload
+        /// </summary>
+        protected virtual void MonitorQuestItems() { }
 
-            var newQuest = this.Deserialize(stateAsString);
-            if (newQuest is null)
+        private void Player_InventoryChanged(object? sender, StardewModdingAPI.Events.InventoryChangedEventArgs e)
+        {
+            foreach (var item in e.Added)
             {
-                // Try to recover from the fault by blowing away the data.  This means that the
-                // next day, we'll hit the item-re-plant logic.
-                Game1.player.modData.Remove(this.ModDataKey);
-            }
-            else
-            {
-                newQuest.MarkAsViewed();
-                newQuest.AdvanceStateForDayPassing();
-                Game1.player.questLog.Add(newQuest);
+                if (this.itemsToWatch.TryGetValue(item.ItemId, out var handler))
+                {
+                    if (!e.Player.IsMainPlayer)
+                    {
+                        e.Player.holdUpItemThenMessage(item, true);
+                        Spout("This item is for unlocking the tractor - only the host can advance this quest.  Give this item to the host.");
+                    }
+                    else
+                    {
+                        handler(item);
+                    }
+                }
             }
         }
 

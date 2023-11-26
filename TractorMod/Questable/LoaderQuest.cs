@@ -1,11 +1,6 @@
-using System;
 using System.Linq;
 using Microsoft.Xna.Framework;
-using StardewModdingAPI;
 using StardewValley;
-using StardewValley.Quests;
-using StardewValley.TerrainFeatures;
-using static Pathoschild.Stardew.TractorMod.Questable.QuestSetup;
 
 namespace Pathoschild.Stardew.TractorMod.Questable
 {
@@ -57,19 +52,14 @@ namespace Pathoschild.Stardew.TractorMod.Questable
     internal class LoaderQuest
         : BaseQuest<LoaderQuestState>
     {
-        private LoaderQuest(LoaderQuestState state)
-            : base(state)
+        private static readonly Vector2 placeInMineForShoes = new Vector2(48, 8);
+
+        public LoaderQuest()
+            : base(LoaderQuestState.TalkToClint)
         {
             this.questTitle = "Fix the loader";
             this.questDescription = "I found the front end loader attachment for the tractor, but it's all bent up and rusted through in spots.";
         }
-
-        public LoaderQuest()
-            : this(LoaderQuestState.TalkToClint)
-        {
-            this.showNew.Value = true;
-        }
-
 
         protected override void SetObjective()
         {
@@ -92,13 +82,20 @@ namespace Pathoschild.Stardew.TractorMod.Questable
                     this.currentObjective = "I've got Linus recruited to look out for shoes in Alex's trash can, but he warns me that there's something else that might be looking as well...  Who could that be?";
                     break;
                 case LoaderQuestState.DisguiseTheShoes:
-                    this.currentObjective = "Somehow I need to disguise these shoes so that Alex doesn't recognize them...  And maybe do something about that smudge.  Perhaps Alex or Sebastian would loan me some shoe polish.";
+                    this.currentObjective = "Somehow I need to disguise these shoes so that Alex doesn't recognize them...  And maybe do something about that smudge.  Perhaps Sam or Sebastian would loan me some shoe polish.";
+                    break;
+                case LoaderQuestState.GiveShoesToClint:
+                    this.currentObjective = "Give the shoes and the old loader to Clint";
                     break;
                 case LoaderQuestState.InstallTheLoader:
                     this.currentObjective = "Take the fixed loader attachment to the tractor garage.";
                     break;
                 case LoaderQuestState.WaitForClint1:
-                    this.currentObjective = "Wait for the fixed loader to be delivered.";
+                case LoaderQuestState.WaitForClint2:
+                    this.currentObjective = "Wait for Clint to finish repairing the loader.";
+                    break;
+                case LoaderQuestState.PickUpLoader:
+                    this.currentObjective = "Clint should be done repairing the loader by now.";
                     break;
             }
         }
@@ -133,14 +130,15 @@ namespace Pathoschild.Stardew.TractorMod.Questable
             }
             else if (n?.Name == "Sebastian" && (item is null || item?.ItemId == ObjectIds.BustedLoader) && this.State < LoaderQuestState.SnagAlexsOldShoes)
             {
-                Spout(n, "Shoes, yeah man, they cost a fortune.  My gig at the library barely pays, so I roll around in these supercheapies from Joja.  I dye mine every once in a while so they look fresh.");
+                Spout(n, "Shoes, yeah man, they cost a fortune.  My gig at the library barely pays, so I roll around in these supercheapies from Joja.  I use colored shoe-polish on mine every once in a while so they look fresh.");
             }
             else if (n?.Name == "Alex" && (item is null || item?.ItemId == ObjectIds.BustedLoader) && this.State < LoaderQuestState.SnagAlexsOldShoes)
             {
+                this.PlantShoesNextToDwarf();
                 Spout(n, "I got these new shoes yesterday 'cuz my old pair had a brown smudge.#$b#I just threw them into the garbage. I would've donated them but I don't like the idea of some weirdo wearing my shoes, ya know?#$b#What size do I wear?  14EEE. . . .  Wait, why do you ask?");
                 this.State = LoaderQuestState.SnagAlexsOldShoes;
             }
-            else if (n?.Name == "Linus" && Game1.player.getFriendshipHeartLevelForNPC("Linus") > 2 && this.State == LoaderQuestState.SnagAlexsOldShoes)
+            else if (n?.Name == "Linus" && Game1.player.getFriendshipHeartLevelForNPC("Linus") >= 2 && this.State == LoaderQuestState.SnagAlexsOldShoes)
             {
                 // The event where you catch linus dumpster diving is at ~.25 hearts, so at a level of 2, we can assume the player knows the sort of things Linus gets up to during the night...
                 Spout(n, ". . . So...  what I think I'm hearing you say is you want me to scout the Mullner's trash can for shoes...#$b#You promise this is for a good cause?  Hm...  Okay.  I'll let you know if I come across them.#$b#I don't want to disturb you, but I'm not the only one nosing around town late at night.  I might not find them first.");
@@ -148,20 +146,20 @@ namespace Pathoschild.Stardew.TractorMod.Questable
             }
             else if ((n?.Name == "Sam" || n?.Name == "Sebastian") && this.TryTakeItemsFromPlayer(ObjectIds.AlexesOldShoe))
             {
-                string treat = (n?.Name == "Sam" ? "Pizza" : "Sashimi");
-                Spout(n, $"You want to borrow my shoe polish?  That's kindof an odd request but, you know what, sure.  What the heck, knock yourself out.#$b#There better be some {treat} in this for me somewhere down the road.");
-                this.AddItemToInventory(ObjectIds.DyedShoe);
-                this.State = LoaderQuestState.FindShoesForClint;
+                string treat = (n.Name == "Sam" ? "Pizza" : "Sashimi");
+                Spout(n, $"You want to borrow my shoe polish?  That's kindof an odd request but, you know what?  Sure.  Knock yourself out.#$b#There better be some {treat} in this for me somewhere down the road.");
+                this.AddItemToInventory(ObjectIds.DisguisedShoe);
             }
-            else if (n?.Name == "Clint" && this.TryTakeItemsFromPlayer(ObjectIds.BustedLoader, 1, ObjectIds.DyedShoe, 1))
+            else if (n?.Name == "Clint" && this.TryTakeItemsFromPlayer(ObjectIds.BustedLoader, 1, ObjectIds.DisguisedShoe, 1))
             {
                 Spout(n, "Ah, these shoes look great!  Fit good too.  But somehow I still don't quite feel like a ladykiller.  Well, time will tell!#$b#I'll get this back to you in a couple days.  Look for it in the mail.  I can at least ship it to you since you did all this running around for me.");
                 this.State = LoaderQuestState.WaitForClint1;
             }
-
-            // TODO: Properly implement the quest
-            //Game1.player.removeItemFromInventory(item);
-            //_ = Game1.player.addItemToInventory(new StardewValley.Object(ObjectIds.WorkingLoader, 1));
+            else if (n?.Name == "Clint" && this.State == LoaderQuestState.PickUpLoader)
+            {
+                Spout(n, "Here's your front-end loader, all fixed up.  Stick to small rocks, right?#$b#If you need to move big ones, get some explosives for the job.  Oh, and let me know when you're doing it.  I'll bring beer.");
+                this.AddItemToInventory(ObjectIds.WorkingLoader);
+            }
 
             return false;
         }
@@ -183,7 +181,40 @@ namespace Pathoschild.Stardew.TractorMod.Questable
                     this.State = LoaderQuestState.LinusSniffing5;
                     Game1.player.mailForTomorrow.Add(MailKeys.LinusFoundShoes);
                     break;
+                case LoaderQuestState.WaitForClint1:
+                    this.State = LoaderQuestState.WaitForClint2;
+                    break;
+                case LoaderQuestState.WaitForClint2:
+                    this.State = LoaderQuestState.PickUpLoader;
+                    break;
             }
+        }
+
+        private void PlantShoesNextToDwarf()
+        {
+            var mines = Game1.locations.FirstOrDefault(l => l.Name == "Mine");
+            if (mines is null)
+            {
+                QuestSetup.Instance.Monitor.Log("Couldn't find the Mine?!", StardewModdingAPI.LogLevel.Warn);
+                return;
+            }
+
+            var alreadyPlaced = mines.getObjectAtTile((int)placeInMineForShoes.X, (int)placeInMineForShoes.Y);
+            if (alreadyPlaced is null)
+            {
+                var o = ItemRegistry.Create<StardewValley.Object>(ObjectIds.AlexesOldShoe);
+                o.Location = mines;
+                o.TileLocation = placeInMineForShoes;
+                QuestSetup.Instance.Monitor.VerboseLog($"{ObjectIds.AlexesOldShoe} placed at {placeInMineForShoes.X},{placeInMineForShoes.Y}");
+                o.IsSpawnedObject = true;
+                mines.objects[o.TileLocation] = o;
+            }
+        }
+
+        private void RemoveShoesNearDwarf()
+        {
+            var mines = Game1.locations.FirstOrDefault(l => l.Name == "Mine");
+            mines?.removeObject(placeInMineForShoes, showDestroyedObject: false);
         }
     }
 }

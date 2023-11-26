@@ -15,7 +15,7 @@ namespace Pathoschild.Stardew.TractorMod.Questable
         public const string ScythePart1 = "Pathoschild.TractorMod_ScythePart1";
         public const string ScythePart2 = "Pathoschild.TractorMod_ScythePart2";
         public const string AlexesOldShoe = "Pathoschild.TractorMod_AlexesShoe";
-        public const string DyedShoe = "Pathoschild.TractorMod_DyedShoe";
+        public const string DisguisedShoe = "Pathoschild.TractorMod_DisguisedShoe";
         public const string BustedWaterer = "Pathoschild.TractorMod_BustedWaterer";
         public const string WorkingWaterer = "Pathoschild.TractorMod_WorkingWaterer";
         public const string BustedSeeder = "Pathoschild.TractorMod_BustedSeeder";
@@ -90,18 +90,18 @@ namespace Pathoschild.Stardew.TractorMod.Questable
                 9);
             addQuestItem(
                 AlexesOldShoe,
-                "pair of rather nice shoes", // TODO: 18n
+                "Alex's old shoes", // TODO: 18n
                 "14EEE, slightly smudged", // TODO: 18n
                 10);
             addQuestItem(
-                DyedShoe,
+                DisguisedShoe,
                 "cleverly repackaged pair of shoes", // TODO: 18n
                 "Alex's old shoes, cleverly dyed.  Nobody will ever know.", // TODO: 18n
                 11);
             addQuestItem(
                 BustedSeeder,
-                "broken fertilizer and seed Seeder", // TODO: 18n
-                "The old fertilizer and seed spread for the old tractor.  Needs a good bit of fiddling to make work.", // TODO: 18n
+                "broken fertilizer and seeder", // TODO: 18n
+                "The fertilizer and seed spread for the old tractor.  It needs a good bit of fiddling to make work.", // TODO: 18n
                 12);
             addQuestItem(
                 WorkingSeeder,

@@ -27,6 +27,8 @@ namespace Pathoschild.Stardew.TractorMod.Questable
         public IModHelper Helper => this.mod.Helper;
         public IMonitor Monitor => this.mod.Monitor;
 
+        public static QuestSetup Instance = null!;
+
         internal QuestSetup(ModEntry mod)
         {
             this.QuestControllers = new List<BaseQuestController> {
@@ -37,13 +39,14 @@ namespace Pathoschild.Stardew.TractorMod.Questable
             };
             this.mod = mod;
 
-            this.Helper.Events.Player.InventoryChanged += this.Player_InventoryChanged;
             this.Helper.Events.GameLoop.OneSecondUpdateTicked += this.GameLoop_OneSecondUpdateTicked;
 
             var harmony = new Harmony(mod.ModManifest.UniqueID);
             var farmType = typeof(Farm);
             var getFishMethod = farmType.GetMethod("getFish");
             harmony.Patch(getFishMethod, prefix: new HarmonyMethod(typeof(QuestSetup), nameof(Prefix_GetFish)));
+
+            Instance = this;
         }
 
         private static bool Prefix_GetFish(ref Item __result)
@@ -92,24 +95,6 @@ namespace Pathoschild.Stardew.TractorMod.Questable
             Rectangle cPos = new Rectangle(new Point((int)c.Position.X, (int)c.Position.Y-128), new Point(64, 128));
             bool isIntersecting = b.intersects(cPos);
             return isIntersecting;
-        }
-
-        private void Player_InventoryChanged(object? sender, InventoryChangedEventArgs e)
-        {
-            foreach (var qc in this.QuestControllers)
-            {
-                var bustedPart = e.Added.FirstOrDefault(i => i.ItemId == qc.BrokenAttachmentPartId);
-                if (bustedPart is not null)
-                {
-                    qc.PlayerGotBrokenPart(e.Player, bustedPart);
-                }
-
-                var workingPart = e.Added.FirstOrDefault(i => i.ItemId == qc.WorkingAttachmentPartId);
-                if (workingPart is not null)
-                {
-                    qc.PlayerGotWorkingPart(e.Player, workingPart);
-                }
-            }
         }
 
         public void OnDayStarted(Stable? garage)
@@ -238,7 +223,7 @@ namespace Pathoschild.Stardew.TractorMod.Questable
 
         internal void OnAssetRequested(AssetRequestedEventArgs e, ModConfig config)
         {
-            // this.Monitor.Log($"OnAssetRequested({e.NameWithoutLocale.Name})");
+            this.Monitor.Log($"OnAssetRequested({e.NameWithoutLocale.Name})");
             if (!config.QuestDriven)
             {
                 return;

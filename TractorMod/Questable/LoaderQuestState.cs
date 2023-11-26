@@ -13,7 +13,10 @@ namespace Pathoschild.Stardew.TractorMod.Questable
         LinusSniffing4,
         LinusSniffing5,
         DisguiseTheShoes,
+        GiveShoesToClint,
         WaitForClint1,
+        WaitForClint2,
+        PickUpLoader,
         InstallTheLoader,
         Complete,
     }

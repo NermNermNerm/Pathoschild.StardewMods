@@ -45,7 +45,7 @@ namespace Pathoschild.Stardew.TractorMod.Questable
 
         protected bool TryTakeItemsFromPlayer(string itemId, int count = 1)
         {
-            var stack = Game1.player.Items.FirstOrDefault(i => i.ItemId == itemId && i.stack.Value >= count);
+            var stack = Game1.player.Items.FirstOrDefault(i => i?.ItemId == itemId && i.stack.Value >= count);
             if (stack == null)
             {
                 return false;
@@ -64,8 +64,8 @@ namespace Pathoschild.Stardew.TractorMod.Questable
 
         protected bool TryTakeItemsFromPlayer(string item1Id, int count1, string item2Id, int count2)
         {
-            var stack1 = Game1.player.Items.FirstOrDefault(i => i.ItemId == item1Id && i.stack.Value >= count1);
-            var stack2 = Game1.player.Items.FirstOrDefault(i => i.ItemId == item2Id && i.stack.Value >= count2);
+            var stack1 = Game1.player.Items.FirstOrDefault(i => i?.ItemId == item1Id && i.stack.Value >= count1);
+            var stack2 = Game1.player.Items.FirstOrDefault(i => i?.ItemId == item2Id && i.stack.Value >= count2);
             if (stack1 is null || stack2 is null)
             {
                 return false;

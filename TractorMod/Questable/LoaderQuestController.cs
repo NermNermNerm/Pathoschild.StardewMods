@@ -1,5 +1,8 @@
 using System.Linq;
+using Microsoft.Xna.Framework;
+using StardewModdingAPI;
 using StardewValley;
+using StardewValley.Locations;
 using StardewValley.TerrainFeatures;
 
 namespace Pathoschild.Stardew.TractorMod.Questable
@@ -10,7 +13,7 @@ namespace Pathoschild.Stardew.TractorMod.Questable
         public LoaderQuestController(QuestSetup mod)
             : base(mod)
         {
-
+            // TODO: If the quest isn't complete, register an inventory listener, looking for old and new shoes.
         }
 
         protected override string QuestCompleteMessage => "Sweet!  You've now got a front-end loader attachment for your tractor to clear out debris!#$b#HINT: To use it, equip the pick or the axe while on the tractor.";
@@ -18,11 +21,49 @@ namespace Pathoschild.Stardew.TractorMod.Questable
         public override string WorkingAttachmentPartId => ObjectIds.WorkingLoader;
         public override string BrokenAttachmentPartId => ObjectIds.BustedLoader;
         public override string HintTopicConversationKey => ConversationKeys.LoaderNotFound;
+
         protected override void OnQuestStarted()
         {
-            var mines = Game1.locations.FirstOrDefault(l => l.Name == "Mines");
-            // Place shoes in the dwarf cavern
+            this.MonitorQuestItems();
+            base.OnQuestStarted();
+        }
 
+        protected override void MonitorQuestItems()
+        {
+            this.MonitorInventoryForItem(ObjectIds.AlexesOldShoe, this.OnPlayerGotOldShoe);
+            this.MonitorInventoryForItem(ObjectIds.DisguisedShoe, this.OnPlayerGotDisguisedShoe);
+        }
+
+        private void OnPlayerGotOldShoe(Item oldShoes)
+        {
+            this.StopMonitoringInventoryFor(ObjectIds.AlexesOldShoe);
+            var quest = Game1.player.questLog.OfType<LoaderQuest>().FirstOrDefault();
+            if (quest is null)
+            {
+                this.mod.Monitor.Log($"Player found {oldShoes.ItemId} when the Loader quest was not active?!", LogLevel.Warn);
+                return;
+            }
+            Game1.player.holdUpItemThenMessage(oldShoes);
+            if (quest.State < LoaderQuestState.DisguiseTheShoes)
+            {
+                quest.State = LoaderQuestState.DisguiseTheShoes;
+            }
+        }
+
+        private void OnPlayerGotDisguisedShoe(Item dyedShoes)
+        {
+            this.StopMonitoringInventoryFor(ObjectIds.DisguisedShoe);
+            var quest = Game1.player.questLog.OfType<LoaderQuest>().FirstOrDefault();
+            if (quest is null)
+            {
+                this.mod.Monitor.Log($"Player found {dyedShoes.ItemId}, when the quest was not active?!", LogLevel.Warn);
+                return;
+            }
+            Game1.player.holdUpItemThenMessage(dyedShoes);
+            if (quest.State < LoaderQuestState.GiveShoesToClint)
+            {
+                quest.State = LoaderQuestState.GiveShoesToClint;
+            }
         }
 
         protected override void HideStarterItemIfNeeded()

@@ -56,8 +56,6 @@ namespace Pathoschild.Stardew.TractorMod.Questable
         //   When you pick it up from George, you get a friendship heart for him, Alex, Evelyn and half a heart
         //   for Lewis.
 
-        private SeederQuestState state;
-
         private const int ironBarCount = 10;
 
         public SeederQuest()
@@ -70,7 +68,7 @@ namespace Pathoschild.Stardew.TractorMod.Questable
 
         public void ReadyToInstall()
         {
-            this.state = SeederQuestState.InstallPart;
+            this.State = SeederQuestState.InstallPart;
             this.SetObjective();
         }
 
@@ -81,10 +79,9 @@ namespace Pathoschild.Stardew.TractorMod.Questable
 
         public override bool checkIfComplete(NPC? n, int number1, int number2, Item? item, string str, bool probe)
         {
-
-            if (n?.Name == "George" && this.state == SeederQuestState.GotPart && (item is null || item.ItemId == ObjectIds.BustedSeeder) && !this.pesteredGeorgeToday)
+            if (n?.Name == "George" && this.State == SeederQuestState.GotPart && (item is null || item.ItemId == ObjectIds.BustedSeeder) && !this.pesteredGeorgeToday)
             {
-                Spout(n, "Kids these days just don't listen.  I told you, I'm too old to repair your equipment.$a");
+                Spout(n, "Young people just don't listen.  I told you, I'm too old to repair your equipment.$a");
                 Game1.player.changeFriendship(-120, n);
                 n.doEmote(12); // Grumpiness emote
                 this.pesteredGeorgeToday = true;
@@ -93,20 +90,20 @@ namespace Pathoschild.Stardew.TractorMod.Questable
             {
                 Spout(n, "I'm honored that you're asking me to look at this, but given what you've said, and what I know about George, it'd really be better if George did the work...#$b#But I know it won't be easy for him.$s#$b#But if he actually did it, well, it'd do him a lot of good.#$b#You should talk to Lewis.  He and George go back a long way.  He'll know what to do.#$b#But if it all goes wrong, come back to me and I'll try to fix it.");
             }
-            else if (n?.Name == "Lewis" && this.state == SeederQuestState.GotPart && (item is null || item.ItemId == ObjectIds.BustedSeeder))
+            else if (n?.Name == "Lewis" && this.State == SeederQuestState.GotPart && (item is null || item.ItemId == ObjectIds.BustedSeeder))
             {
                 Spout(n, "Oh dear oh dear oh dear...$2#$b#Hm...$2#$b#George isn't wrong -- physically, he's just not in good shape.  Mentally, though, he's still as sharp as ever.  Alas, not like your Grandpa, towards the end.$s#$b#But if he can somehow do this, or at least help in doing it, it'll do him so much good.#$b#We need some help here...  We need Evelyn, and YOU have to get her to cajole George into trying this.  I can't be seen to be involved for, err...  reasons.#$b#You need to build some trust with her before you broach the topic, however.  Tread carefully.");
-                this.state = SeederQuestState.GetEvelynOnSide;
+                this.State = SeederQuestState.GetEvelynOnSide;
                 this.SetObjective();
             }
-            else if (n?.Name == "Evelyn" && this.state == SeederQuestState.GetEvelynOnSide && !this.pesteredEvelynToday)
+            else if (n?.Name == "Evelyn" && this.State == SeederQuestState.GetEvelynOnSide && !this.pesteredEvelynToday)
             {
                 if (Game1.player.getFriendshipHeartLevelForNPC("Evelyn") >= evelynWillingToHelpLevel)
                 {
                     Spout(n, "Ohhh...  I know George *could* repair that thing...  But he could also fail miserably, you see, it's not just his legs that have let him down.  Have you seen his hands, how they shake?  It's not so bad, but it really frustrates him.#$b#Oh deary, I'm old too...  I need time to think about this.");
                     this.pesteredEvelynToday = true;
                     Game1.player.mailForTomorrow.Add(MailKeys.EvelynPointsToAlex);
-                    this.state = SeederQuestState.WaitForEvelyn;
+                    this.State = SeederQuestState.WaitForEvelyn;
                     this.SetObjective();
                 }
                 else
@@ -115,7 +112,7 @@ namespace Pathoschild.Stardew.TractorMod.Questable
                     this.pesteredEvelynToday = true;
                 }
             }
-            else if (n?.Name == "Alex" && this.state == SeederQuestState.TalkToAlex1 && (item is null || item.ItemId == ObjectIds.BustedSeeder) && !this.pesteredAlexToday)
+            else if (n?.Name == "Alex" && this.State == SeederQuestState.TalkToAlex1 && (item is null || item.ItemId == ObjectIds.BustedSeeder) && !this.pesteredAlexToday)
             {
                 this.pesteredAlexToday = true;
                 if (Game1.player.getFriendshipHeartLevelForNPC("Alex") < alexWillingToHelpLevel)
@@ -126,41 +123,41 @@ namespace Pathoschild.Stardew.TractorMod.Questable
                 {
                     // Spout(n, "Yeah...  I know.  I should help my Granddad do this.  I love him so much.  But I'll just screw it up and he'll get all mad and bothered and it'll just all go wrong.  You're good with this sort of thing, you should talk Grandpa into showing you how.  Or get Maru, she's good with this sort of thing...");
                     Spout(n, "Nah man, these hands were made for Gridball.  You're good with this sort of thing, you should talk Grandpa into showing you how.  Or get Maru, she's good at mechanical stuff...");
-                    this.state = SeederQuestState.GetHaleyOnSide;
+                    this.State = SeederQuestState.GetHaleyOnSide;
                     this.SetObjective();
                 }
             }
-            else if (n?.Name == "Lewis" && this.state == SeederQuestState.GetHaleyOnSide && (item is null || item.ItemId == ObjectIds.BustedSeeder))
+            else if (n?.Name == "Lewis" && this.State == SeederQuestState.GetHaleyOnSide && (item is null || item.ItemId == ObjectIds.BustedSeeder))
             {
                 Spout(n, "Heh, isn't easy is it.  Keep it up, maybe you'll learn how to be mayor someday!$1#$b#Evelyn was probably right, in that somebody his own age could do it.  Somebody he hangs out with alot.");
             }
-            else if ((n?.Name == "Sebastian" || n?.Name == "Abigail" || n?.Name == "Sam") && this.state == SeederQuestState.GetHaleyOnSide && (item is null || item.ItemId == ObjectIds.BustedSeeder))
+            else if ((n?.Name == "Sebastian" || n?.Name == "Abigail" || n?.Name == "Sam") && this.State == SeederQuestState.GetHaleyOnSide && (item is null || item.ItemId == ObjectIds.BustedSeeder))
             {
                 Spout(n, "You think *I* have a clue what goes on inside Alex's head??$5#$b#Oh wait, I *DO* know...  Absolutely nothing.#4");
             }
-            else if (n?.Name == "Emily" && this.state == SeederQuestState.GetHaleyOnSide && (item is null || item.ItemId == ObjectIds.BustedSeeder))
+            else if (n?.Name == "Emily" && this.State == SeederQuestState.GetHaleyOnSide && (item is null || item.ItemId == ObjectIds.BustedSeeder))
             {
-                Spout(n, "Oh I hate to admit it, but the answer to your problem is Haley.  She can make any boy do any thing, ESPECIALLY Alex.^She might seem vaccuous, but trust me, if you need some guy manipulated, she can do it.  I'm not saying it's a good thing all the time, but this sounds like a good cause.");
+                Spout(n, "Oh I hate to admit it, but the solution to your problem is Haley.  She can make any boy do any thing, ESPECIALLY Alex.^She might seem vaccuous at times, but trust me, if you need some guy manipulated, she can do it.  I'm not saying it's a good thing all the time, but this sounds like a good cause.");
             }
-            else if (n?.Name == "Haley" && this.state == SeederQuestState.GetHaleyOnSide && (item is null || item.ItemId == ObjectIds.BustedSeeder) && !this.pesteredHaleyToday)
+            else if (n?.Name == "Haley" && this.State == SeederQuestState.GetHaleyOnSide && (item is null || item.ItemId == ObjectIds.BustedSeeder) && !this.pesteredHaleyToday)
             {
-                Spout(n, "Hah.  Alex does more with his hands than just play Gridball.$3#$b#Tell me everything. every. little. detail.$7#$b#Okay.  I'll take care of this for you, afterall, confidence is so very attractive in a man.  Just give me a couple days.  I'll let you know.");
-                this.state = SeederQuestState.WaitForHaleyDay1;
+                Spout(n, "Hah.  Alex does more with his hands than just play Gridball.$3#$b#Tell me everything. every. little. detail.$7#$b#Ah...  I see...#$b#I'll take care of this for you.  Just give me a day or two.  I'll let you know.$2#$b#*Sigh*  Confidence is so very attractive in a man.$7");
+                this.State = SeederQuestState.WaitForHaleyDay1;
                 this.SetObjective();
                 this.pesteredHaleyToday = true;
                 Game1.player.mailForTomorrow.Add(MailKeys.HaleysWorkIsDone);
             }
-            else if (n?.Name == "Alex" && this.state == SeederQuestState.TalkToAlex2 && (item is null || item.ItemId == ObjectIds.BustedSeeder))
+            else if (n?.Name == "Alex" && this.State == SeederQuestState.TalkToAlex2 && (item is null || item.ItemId == ObjectIds.BustedSeeder))
             {
                 Spout(n, $"Okay, I can do this.  Grandpa seems fired up too.  Give me the {ironBarCount} iron bars Grandpa said we need and the broken seeder and we'll get on it.");
-                this.state = SeederQuestState.GiveAlexStuff;
+                this.State = SeederQuestState.GiveAlexStuff;
                 this.SetObjective();
             }
-            else if (n?.Name == "Alex" && this.state == SeederQuestState.GiveAlexStuff && (item is null || item.ItemId == ObjectIds.BustedSeeder))
+            else if (n?.Name == "Alex" && this.State == SeederQuestState.GiveAlexStuff && (item is null || item.ItemId == ObjectIds.BustedSeeder))
             {
                 if (this.TryTakeItemsFromPlayer("335", ironBarCount, ObjectIds.BustedSeeder, 1))
                 {
-                    this.state = SeederQuestState.WaitForAlexDay1;
+                    this.State = SeederQuestState.WaitForAlexDay1;
                     Spout(n, "Thanks, that's all the stuff.  Well, I'm off the the garage with Gramps.  I'll send mail or something after we get it working.");
                 }
                 else
@@ -168,7 +165,7 @@ namespace Pathoschild.Stardew.TractorMod.Questable
                     Spout(n, $"We'll need the old seeder and {ironBarCount} iron bars.  Bring 'em by when you can.");
                 }
             }
-            else if (n?.Name == "George" && this.state == SeederQuestState.GetPartFromGeorge && item is null)
+            else if (n?.Name == "George" && this.State == SeederQuestState.GetPartFromGeorge && item is null)
             {
                 Game1.player.addItemToInventory(new StardewValley.Object(ObjectIds.WorkingSeeder, 1));
                 Spout(n, "There you go.  Fixed it myself.  Alex didn't screw it up too much; he's a good kid.#$b#Don't try and sprinkle chicken manure with the thing.  I don't want to see this thing back here again.");
@@ -183,7 +180,7 @@ namespace Pathoschild.Stardew.TractorMod.Questable
                 var lewis = Game1.getCharacterFromName("Lewis");
                 Game1.player.changeFriendship(120, alex);
                 lewis?.doEmote(32); // smiley
-                this.state = SeederQuestState.InstallPart;
+                this.State = SeederQuestState.InstallPart;
                 this.SetObjective();
             }
 
@@ -192,10 +189,10 @@ namespace Pathoschild.Stardew.TractorMod.Questable
 
         protected override void SetObjective()
         {
-            switch (this.state)
+            switch (this.State)
             {
                 case SeederQuestState.GotPart:
-                    this.currentObjective = "Hm.  I wonder what I should do, I certainly can't fix it, and it'd cost a fortune to send it to Zuza city.";
+                    this.currentObjective = "Hm.  I wonder what I should do.  I certainly can't fix it, and it'd cost a fortune to send it to Zuza city.";
                     break;
                 case SeederQuestState.GetEvelynOnSide:
                     this.currentObjective = $"Get Evelyn to help (Talk to her after getting her to {evelynWillingToHelpLevel} hearts)";
