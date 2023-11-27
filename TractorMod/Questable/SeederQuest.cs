@@ -156,7 +156,7 @@ namespace Pathoschild.Stardew.TractorMod.Questable
                 Game1.player.changeFriendship(240, alex);
                 alex?.doEmote(20);
                 var lewis = Game1.getCharacterFromName("Lewis");
-                Game1.player.changeFriendship(120, alex);
+                Game1.player.changeFriendship(120, lewis);
                 lewis?.doEmote(32); // smiley
                 this.State = SeederQuestState.InstallPart;
             }

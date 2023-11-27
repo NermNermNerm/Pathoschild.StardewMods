@@ -22,14 +22,6 @@ namespace Pathoschild.Stardew.TractorMod.Questable
 
         public abstract void WorkingAttachmentBroughtToGarage();
 
-        public static void Spout(NPC n, string message)
-        {
-            Game1.DrawDialogue(new Dialogue(n, null, message));
-            //n.CurrentDialogue.Clear();
-            //n.CurrentDialogue.Push(new Dialogue(n, null, message));
-            //Game1.drawDialogue(n);
-        }
-
         public static void Spout(string message)
         {
             Game1.DrawDialogue(new Dialogue(null, null, message));
@@ -66,7 +58,7 @@ namespace Pathoschild.Stardew.TractorMod.Questable
             }
 
             this.AnnounceGotBrokenPart(brokenPart);
-            var quest = new TQuest() { Controller = this };
+            var quest = new TQuest() { Controller = this, MakeSoundOnAdvancement = true };
             Game1.player.questLog.Add(quest);
             this.OnQuestStarted();
             this.MonitorInventoryForItem(this.WorkingAttachmentPartId, this.PlayerGotWorkingPart);
@@ -103,7 +95,6 @@ namespace Pathoschild.Stardew.TractorMod.Questable
         protected abstract string QuestCompleteMessage { get; }
         protected virtual void HideStarterItemIfNeeded() { }
 
-
         protected virtual TQuest? Deserialize(string storedValue)
         {
             if (!Enum.TryParse(storedValue, out TStateEnum parsedValue))
@@ -113,7 +104,7 @@ namespace Pathoschild.Stardew.TractorMod.Questable
             }
             else
             {
-                return new TQuest { State = parsedValue };
+                return new TQuest { State = parsedValue, Controller = this };
             }
         }
 

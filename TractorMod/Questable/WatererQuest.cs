@@ -24,7 +24,6 @@ namespace Pathoschild.Stardew.TractorMod.Questable
 
         public override void CheckIfComplete(NPC n, Item? item)
         {
-            this.Spout(n, "Howdy Pierre");
             bool itemIsWaterer = item?.Name == ObjectIds.BustedWaterer;
             if (n?.Name == "Maru" && item is null && this.State == WatererQuestState.WaitForMaruDay1)
             {
@@ -49,7 +48,6 @@ namespace Pathoschild.Stardew.TractorMod.Questable
                 if (this.State < WatererQuestState.MaruFingered)
                 {
                     this.State = WatererQuestState.MaruFingered;
-                    this.SetObjective();
                     Game1.player.changeFriendship(-60, n);
                     n.doEmote(12); // grumpy
                 }
@@ -62,7 +60,6 @@ namespace Pathoschild.Stardew.TractorMod.Questable
                     if (this.State < WatererQuestState.MaruFingered)
                     {
                         this.State = WatererQuestState.MaruFingered;
-                        this.SetObjective();
                         Game1.player.changeFriendship(60, n);
                         n.doEmote(32); // smily
                     }

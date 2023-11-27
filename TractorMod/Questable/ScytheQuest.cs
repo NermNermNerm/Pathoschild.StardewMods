@@ -94,11 +94,11 @@ namespace Pathoschild.Stardew.TractorMod.Questable
             {
                 this.Spout(n, "BAH!  Begone with this mundane contrivance!$a");
             }
-            else if (n.Name == "Jaz" && this.jazPartGot)
+            else if (n.Name == "Jas" && this.jazPartGot)
             {
                 this.Spout(n, "I love how my jumprope sparkles in the sun now!  Did you have any luck getting it to fit back together?");
             }
-            else if (n.Name == "Jaz" && this.jazTradeKnown)
+            else if (n.Name == "Jas" && this.jazTradeKnown)
             {
                 // It'd be nice if there was a way to make this a little more interactive with Jaz having, like a random taste-of-the-day and
                 //  only one gem will be shiny enough on that day.  I don't see a way to make that happen right now.
@@ -120,7 +120,7 @@ namespace Pathoschild.Stardew.TractorMod.Questable
 
                 this.Spout(n, "Oohh when are you gonna bring me something shiny!  I'm really looking forward to it!");
             }
-            else if (n.Name == "Jaz")
+            else if (n.Name == "Jas")
             {
                 this.Spout(n, "Ooh!  You found the Greeble machine!$h#$b#Vincent and I used to play games with that, but we had to stop because Aunt Marnie told us we couldn't go into your pasture anymore unless you invite us.#$b#There are parts missing?  Well of course there are!  Vincent and I kept some of the shinier bits, see, one's on my jumprope!  It's so shiny, it sparkles when I jump!  Oh, and FINDERS KEEPERS!$l#$b#Well, I suppose I could give it back to you...  BUT ONLY IF YOU TRADE ME SOMETHING REALLY SHINY!$h");
                 this.jazTradeKnown = true;
@@ -147,6 +147,7 @@ namespace Pathoschild.Stardew.TractorMod.Questable
                 this.Spout(n, "The Greeble machine!$h#$b#Jaz and I used to play games with that, but we had to stop because Marnie told us we couldn't go into your pasture anymore unless you invite us.#$b#There are parts missing?  Sure there are!  Me and Jaz took a couple of pieces.  I used mine in a trap I was building to trap the Greebles under my bed!  It didn't work.  Hey, have you got any good bugs on your farm?  I'll find it for you if you can bring me some really big crawly ones!$h");
                 this.vincentTradeKnown = true;
                 this.State = ScytheQuestState.JazAndVincentFingered;
+                this.SetObjective();
             }
             // else this.Spout(n, "What is that thing?  A harvester?  Sure, if you say so...$s");
         }

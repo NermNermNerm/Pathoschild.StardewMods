@@ -1,12 +1,4 @@
-using System;
-using System.Linq;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Microsoft.Xna.Framework;
-using StardewModdingAPI;
 using StardewValley;
-using StardewValley.Quests;
-using StardewValley.TerrainFeatures;
-using static Pathoschild.Stardew.TractorMod.Questable.QuestSetup;
 
 namespace Pathoschild.Stardew.TractorMod.Questable
 {

@@ -208,7 +208,7 @@ namespace Pathoschild.Stardew.TractorMod.Questable
 
         internal void OnAssetRequested(AssetRequestedEventArgs e, ModConfig config)
         {
-            this.Monitor.Log($"OnAssetRequested({e.NameWithoutLocale.Name})");
+            // this.Monitor.Log($"OnAssetRequested({e.NameWithoutLocale.Name})");
             if (!config.QuestDriven)
             {
                 return;
