@@ -19,7 +19,6 @@ namespace Pathoschild.Stardew.TractorMod.Questable
         {
         }
 
-
         public static float chanceOfCatchingQuestItem = 0;
 
         protected override string QuestCompleteMessage => "Awesome!  You've now got a way to water your crops with your tractor!#$b#HINT: To use it, equip the watering can while on the tractor.";
@@ -35,7 +34,7 @@ namespace Pathoschild.Stardew.TractorMod.Questable
         public override void AnnounceGotBrokenPart(Item brokenPart)
         {
             // We want to act a lot differently than we do in the base class, as we got the item through fishing, holding it up would look dumb
-            BaseQuest<WatererQuestState>.Spout("Whoah that was heavy!  Looks like an irrigator attachment for a tractor!  I bet there's a story behind how it got here...");
+            Spout("Whoah that was heavy!  Looks like an irrigator attachment for a tractor under all that mud!");
         }
 
         protected override void OnQuestStarted()
@@ -75,7 +74,6 @@ namespace Pathoschild.Stardew.TractorMod.Questable
             }
             base.OnDayStarted();
         }
-
 
         private static bool Prefix_GetFish(ref Item __result)
         {

@@ -66,7 +66,7 @@ namespace Pathoschild.Stardew.TractorMod.Questable
             }
 
             this.AnnounceGotBrokenPart(brokenPart);
-            var quest = new TQuest();
+            var quest = new TQuest() { Controller = this };
             Game1.player.questLog.Add(quest);
             this.OnQuestStarted();
             this.MonitorInventoryForItem(this.WorkingAttachmentPartId, this.PlayerGotWorkingPart);
@@ -161,6 +161,7 @@ namespace Pathoschild.Stardew.TractorMod.Questable
                 {
                     newQuest.MarkAsViewed();
                     newQuest.AdvanceStateForDayPassing();
+                    newQuest.MakeSoundOnAdvancement = true;
                     Game1.player.questLog.Add(newQuest);
                     this.MonitorInventoryForItem(this.WorkingAttachmentPartId, this.PlayerGotWorkingPart);
                     this.MonitorQuestItems();

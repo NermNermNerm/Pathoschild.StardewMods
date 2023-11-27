@@ -1,8 +1,5 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using StardewValley;
 using StardewValley.Quests;
 
@@ -59,7 +56,7 @@ namespace Pathoschild.Stardew.TractorMod.Questable
             var harpoon = Game1.player.Items.FirstOrDefault(i => i?.ItemId == WatererQuestController.HarpoonToolId);
             if (n?.Name == "Willy" && this.state == HarpoonQuestState.ReturnThePole && harpoon is not null)
             {
-                BaseQuestController.Spout(n, "Ya reeled that ol water tank on wheels in, did ya laddy!$3#$b#Aye I do believe this'll be the talk of the Stardrop for many Fridays to come!$1");
+                this.Spout(n, "Ya reeled that ol water tank on wheels in, did ya laddy!$3#$b#Aye I do believe this'll be the talk of the Stardrop for many Fridays to come!$1");
                 Game1.player.removeItemFromInventory(harpoon);
                 Game1.player.changeFriendship(240, n);
                 n.doEmote(20); // hearts
@@ -68,7 +65,7 @@ namespace Pathoschild.Stardew.TractorMod.Questable
             }
             else if (n?.Name == "Willy" && this.state == HarpoonQuestState.GetThePole && Game1.player.currentLocation.Name == "FishShop")
             {
-                BaseQuestController.Spout(n, "Ah laddy...  I do think I know what you mighta hooked into and yer right that ya need a lot more pole than what you got.#$b#Here's a wee bit o' fishin' kit that my great great grandpappy used to land whales back before we knew better.#$b#I think ya will find it fit for tha purpose.");
+                this.Spout(n, "Ah laddy...  I do think I know what you mighta hooked into and yer right that ya need a lot more pole than what you got.#$b#Here's a wee bit o' fishin' kit that my great great grandpappy used to land whales back before we knew better.#$b#I think ya will find it fit for tha purpose.");
 
                 // TODO: Worry about full inventory
                 _ = Game1.player.addItemToInventory(ItemRegistry.Create(WatererQuestController.HarpoonToolId));
@@ -76,7 +73,7 @@ namespace Pathoschild.Stardew.TractorMod.Questable
             }
             else if (n?.Name == "Willy" && this.state == HarpoonQuestState.GetThePole && Game1.player.currentLocation.Name != "FishShop")
             {
-                BaseQuestController.Spout(n, "Ah laddy...  I do think I know what you mighta hooked into and yer right that ya need a lot more pole than what you got.#$b#Come visit me in my shop and I'll show you something that might work");
+                this.Spout(n, "Ah laddy...  I do think I know what you mighta hooked into and yer right that ya need a lot more pole than what you got.#$b#Come visit me in my shop and I'll show you something that might work");
             }
             return false;
         }
@@ -128,6 +125,25 @@ namespace Pathoschild.Stardew.TractorMod.Questable
             {
                 quest.State = HarpoonQuestState.ReturnThePole;
             }
+        }
+
+        public void Spout(NPC n, string message)
+        {
+            // COPYPASTA from QuestBase.  Maybe one day make this a subclass of QuestBase?
+
+            // Conversation keys and location specific dialogs take priority.  We can't fix the location-specific
+            // stuff, but we can nix conversation topics.
+
+            // Forces it to see if there are Conversation Topics that can be pulled down.
+            // Pulling them down toggles their "only show this once" behavior.
+            n.checkForNewCurrentDialogue(Game1.player.getFriendshipHeartLevelForNPC(n.Name));
+
+            // TODO: Only nix topics that are for this mod.
+            // Can (maybe) be culled off of the tail end of 'n.CurrentDialogue.First().TranslationKey'
+            n.CurrentDialogue.Clear();
+
+            n.CurrentDialogue.Push(new Dialogue(n, null, message));
+            Game1.drawDialogue(n); // <- Push'ing or perhaps the clicking on the NPC causes this to happen anyway. so not sure if it actually helps.
         }
     }
 }

@@ -105,34 +105,34 @@ namespace Pathoschild.Stardew.TractorMod.Questable
             this.State = LoaderQuestState.InstallTheLoader;
         }
 
-        public override bool checkIfComplete(NPC? n, int number1, int number2, Item? item, string str, bool probe)
+        public override void CheckIfComplete(NPC? n, Item? item)
         {
-            if (n?.Name == "Clint" && item?.ItemId == ObjectIds.BustedLoader && this.State == LoaderQuestState.TalkToClint)
+            if (n?.Name == "Clint" && this.State == LoaderQuestState.TalkToClint)
             {
                 Spout(n, "Shoes.  That's my problem.  I wear these dusty old work boots all over the place.$2#$b#What??  Oh.  Sorry.  Just been a bit distracted because I saw on TV that women judge a man by their shoes and look at these...  No wonder I've got no luck with the ladies.$3#$b#What?  You want me to fix that thing?  Sure, looks like it'd be just a bit of reforging, some welds here and there...#$b#Wait!  You're from the city, you know all about shoes!  Tell you what, you get me a nice pair of shoes and I'll fix your loader.  Deal??#$b#GREAT!  I wear 14EEE.");
                 this.State = LoaderQuestState.FindSomeShoes;
             }
-            else if (n?.Name == "Sam" && (item is null || item?.ItemId == ObjectIds.BustedLoader) && this.State < LoaderQuestState.SnagAlexsOldShoes)
+            else if (n?.Name == "Sam" && this.State < LoaderQuestState.SnagAlexsOldShoes)
             {
                 Spout(n, "Shoes, yeah man, they cost a fortune.  My gig at the library barely pays, so I roll around in these supercheapies from Joja.  I color mine every once in a while so they look fresh.");
             }
-            else if (n?.Name == "Abigail" && (item is null || item?.ItemId == ObjectIds.BustedLoader) && this.State < LoaderQuestState.SnagAlexsOldShoes)
+            else if (n?.Name == "Abigail" && this.State < LoaderQuestState.SnagAlexsOldShoes)
             {
                 Spout(n, "Cheap shoes?  And you somehow deduce that I'm authority on such matters!  Hah, you're not far off.#$b#Back before the Jojamart we'd order them online, but now, I've learned the art of Thrift Stores.  I'm actually kindof glad it happened, I really like shopping at thrift stores.#$b#Cheaper than that?  Welp, you could always dumpster-dive!");
             }
-            else if (n?.Name == "Haley" && (item is null || item?.ItemId == ObjectIds.BustedLoader) && this.State < LoaderQuestState.SnagAlexsOldShoes)
+            else if (n?.Name == "Haley" && this.State < LoaderQuestState.SnagAlexsOldShoes)
             {
                 Spout(n, "Ladies' shoes I know.  Men's shoes I don't.");
             }
-            else if (n?.Name == "Emily" && (item is null || item?.ItemId == ObjectIds.BustedLoader) && this.State < LoaderQuestState.SnagAlexsOldShoes)
+            else if (n?.Name == "Emily" && this.State < LoaderQuestState.SnagAlexsOldShoes)
             {
                 Spout(n, "Well, I mostly get my shoes from secondhand stores, but I don't really know about men's shoes.  Have you asked Sam, or Alex?");
             }
-            else if (n?.Name == "Sebastian" && (item is null || item?.ItemId == ObjectIds.BustedLoader) && this.State < LoaderQuestState.SnagAlexsOldShoes)
+            else if (n?.Name == "Sebastian" && this.State < LoaderQuestState.SnagAlexsOldShoes)
             {
                 Spout(n, "Shoes, yeah man, they cost a fortune.  My gig at the library barely pays, so I roll around in these supercheapies from Joja.  I use colored shoe-polish on mine every once in a while so they look fresh.");
             }
-            else if (n?.Name == "Alex" && (item is null || item?.ItemId == ObjectIds.BustedLoader) && this.State < LoaderQuestState.SnagAlexsOldShoes)
+            else if (n?.Name == "Alex" && this.State < LoaderQuestState.SnagAlexsOldShoes)
             {
                 this.PlantShoesNextToDwarf();
                 Spout(n, "I got these new shoes yesterday 'cuz my old pair had a brown smudge.#$b#I just threw them into the garbage. I would've donated them but I don't like the idea of some weirdo wearing my shoes, ya know?#$b#What size do I wear?  14EEE. . . .  Wait, why do you ask?");
@@ -160,8 +160,6 @@ namespace Pathoschild.Stardew.TractorMod.Questable
                 Spout(n, "Here's your front-end loader, all fixed up.  Stick to small rocks, right?#$b#If you need to move big ones, get some explosives for the job.  Oh, and let me know when you're doing it.  I'll bring beer.");
                 this.AddItemToInventory(ObjectIds.WorkingLoader);
             }
-
-            return false;
         }
 
         public override void AdvanceStateForDayPassing()
